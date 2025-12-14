@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Discussion,
   Comment,
@@ -18,89 +18,6 @@ import {
   useToggleReaction,
 } from "@giscore/react/tanstack-query";
 import { useGiscore } from "@giscore/react";
-
-function generateMockComments(count: number, startId: number): CommentType[] {
-  return Array.from({ length: count }, (_, i) => ({
-    id: `DC_kwDOMock${startId + i}`,
-    upvoteCount: Math.floor(Math.random() * 10),
-    viewerHasUpvoted: Math.random() > 0.7,
-    viewerCanUpvote: true,
-    author: {
-      login: `user${startId + i}`,
-      avatarUrl: `https://avatars.githubusercontent.com/u/${startId + i}?v=4`,
-      url: `https://github.com/user${startId + i}`,
-    },
-    viewerDidAuthor: false,
-    createdAt: new Date(Date.now() - (startId + i) * 3600000).toISOString(),
-    url: `https://github.com/example/repo/discussions/1#comment-${startId + i}`,
-    authorAssociation: "NONE",
-    lastEditedAt: null,
-    deletedAt: null,
-    isMinimized: false,
-    body: `This is comment #${startId + i}`,
-    bodyHTML: `<p>This is comment #${startId + i}</p>`,
-    reactionGroups:
-      Math.random() > 0.5
-        ? [
-            {
-              content: "THUMBS_UP" as ReactionContent,
-              users: { totalCount: Math.floor(Math.random() * 5) },
-              viewerHasReacted: Math.random() > 0.7,
-            },
-          ]
-        : [],
-    replies: { totalCount: 0, nodes: [] },
-  }));
-}
-
-const MOCK_PAGE_SIZE = 5;
-
-function createMockDiscussion(
-  pageIndex: number,
-  hasMore: boolean
-): DiscussionType {
-  const startId = pageIndex * MOCK_PAGE_SIZE + 1;
-  return {
-    id: "D_kwDOExample",
-    number: 1,
-    title: "Welcome to Giscore! (Infinite Scroll Demo)",
-    body: "This demo shows infinite scrolling with paginated comments.",
-    bodyHTML:
-      "<p>This demo shows infinite scrolling with paginated comments.</p>",
-    url: "https://github.com/example/repo/discussions/1",
-    locked: false,
-    createdAt: new Date().toISOString(),
-    author: {
-      login: "demo-user",
-      avatarUrl: "https://avatars.githubusercontent.com/u/1?v=4",
-      url: "https://github.com/demo-user",
-    },
-    category: {
-      id: "DIC_kwDOExample",
-      name: "General",
-      slug: "general",
-    },
-    reactionGroups: [
-      {
-        content: "THUMBS_UP",
-        users: { totalCount: 5 },
-        viewerHasReacted: false,
-      },
-      { content: "HEART", users: { totalCount: 3 }, viewerHasReacted: true },
-    ],
-    reactions: { totalCount: 8 },
-    comments: {
-      totalCount: 25,
-      pageInfo: {
-        startCursor: pageIndex > 0 ? `cursor_${pageIndex}` : null,
-        endCursor: hasMore ? `cursor_${pageIndex + 1}` : null,
-        hasNextPage: hasMore,
-        hasPreviousPage: pageIndex > 0,
-      },
-      nodes: generateMockComments(MOCK_PAGE_SIZE, startId),
-    },
-  };
-}
 
 function ReactionBar({
   onToggle,
@@ -328,6 +245,28 @@ function InfiniteDiscussionView({
           </div>
         </div>
 
+        {isAuthenticated ? (
+          <div className="flex items-start gap-3">
+            {viewer && (
+              <img
+                src={viewer.avatarUrl}
+                alt={viewer.login}
+                className="h-8 w-8 rounded-full"
+              />
+            )}
+            <div className="flex-1">
+              <CommentForm onSubmit={onAddComment} />
+            </div>
+          </div>
+        ) : (
+          <button
+            onClick={onLogin}
+            className="w-full rounded-lg bg-gray-900 px-4 py-3 text-sm font-medium text-white hover:bg-gray-800"
+          >
+            Sign in with GitHub to comment
+          </button>
+        )}
+
         <div className="space-y-4">
           {comments.map((comment, index) => (
             <CommentItem
@@ -355,91 +294,14 @@ function InfiniteDiscussionView({
             )}
           </div>
         )}
-
-        {isAuthenticated ? (
-          <div className="flex items-start gap-3">
-            {viewer && (
-              <img
-                src={viewer.avatarUrl}
-                alt={viewer.login}
-                className="h-8 w-8 rounded-full"
-              />
-            )}
-            <div className="flex-1">
-              <CommentForm onSubmit={onAddComment} />
-            </div>
-          </div>
-        ) : (
-          <button
-            onClick={onLogin}
-            className="w-full rounded-lg bg-gray-900 px-4 py-3 text-sm font-medium text-white hover:bg-gray-800"
-          >
-            Sign in with GitHub to comment
-          </button>
-        )}
       </div>
     </Discussion.Root>
   );
 }
 
-function MockInfiniteExample() {
-  const [pages, setPages] = useState<DiscussionType[]>(() => [
-    createMockDiscussion(0, true),
-  ]);
-  const [isFetching, setIsFetching] = useState(false);
-
-  const allComments = pages.flatMap((p) => p.comments.nodes);
-  const lastPage = pages[pages.length - 1];
-  const hasNextPage = lastPage?.comments.pageInfo.hasNextPage ?? false;
-  const totalCount = lastPage?.comments.totalCount ?? 0;
-
-  const handleLoadMore = useCallback(() => {
-    if (isFetching || !hasNextPage) return;
-
-    setIsFetching(true);
-    setTimeout(() => {
-      const nextPageIndex = pages.length;
-      const hasMore = nextPageIndex < 4;
-      setPages((prev) => [...prev, createMockDiscussion(nextPageIndex, hasMore)]);
-      setIsFetching(false);
-    }, 500);
-  }, [isFetching, hasNextPage, pages.length]);
-
-  const handleReaction = (
-    subjectId: string,
-    content: ReactionContent,
-    hasReacted: boolean
-  ) => {
-    console.log("Toggle reaction:", { subjectId, content, hasReacted });
-  };
-
-  const handleAddComment = (body: string) => {
-    console.log("Add comment:", body);
-  };
-
-  const firstPage = pages[0];
-  if (!firstPage || !lastPage) {
-    return null;
-  }
-
-  return (
-    <InfiniteDiscussionView
-      discussion={firstPage}
-      comments={allComments}
-      pageInfo={lastPage.comments.pageInfo}
-      totalCount={totalCount}
-      hasNextPage={hasNextPage}
-      isFetchingNextPage={isFetching}
-      onLoadMore={handleLoadMore}
-      onReaction={handleReaction}
-      onAddComment={handleAddComment}
-    />
-  );
-}
-
 function LiveInfiniteExample() {
   const { config, isAuthenticated, login } = useGiscore();
-  const { data: viewer } = useViewer();
+  const { data: viewer, refetch: refetchViewer } = useViewer();
   const {
     data,
     isLoading,
@@ -449,6 +311,12 @@ function LiveInfiniteExample() {
     fetchNextPage,
     refetch,
   } = useInfiniteDiscussion(1, 10);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      refetchViewer();
+    }
+  }, [isAuthenticated, refetchViewer]);
 
   const toggleReaction = useToggleReaction();
   const addComment = useAddComment({
@@ -553,7 +421,13 @@ function LiveInfiniteExample() {
 
 function UserMenu() {
   const { isAuthenticated, isLoading, login, logout } = useGiscore();
-  const { data: viewer } = useViewer();
+  const { data: viewer, refetch: refetchViewer } = useViewer();
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      refetchViewer();
+    }
+  }, [isAuthenticated, refetchViewer]);
 
   if (isLoading) {
     return (
@@ -598,28 +472,15 @@ function UserMenu() {
 }
 
 export default function App() {
-  const [useMock, setUseMock] = useState(true);
-
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="mx-auto max-w-2xl px-4">
         <div className="mb-8 flex items-center justify-between">
           <h1 className="text-2xl font-bold text-gray-900">Giscore Example</h1>
-          <div className="flex items-center gap-4">
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={useMock}
-                onChange={(e) => setUseMock(e.target.checked)}
-                className="rounded border-gray-300"
-              />
-              <span className="text-gray-600">Use mock data</span>
-            </label>
-            {!useMock && <UserMenu />}
-          </div>
+          <UserMenu />
         </div>
 
-        {useMock ? <MockInfiniteExample /> : <LiveInfiniteExample />}
+        <LiveInfiniteExample />
       </div>
     </div>
   );
