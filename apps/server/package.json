@@ -1,0 +1,28 @@
+{
+  "name": "@giscore/server",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch --env-file=.env.local src/index.ts",
+    "build": "wrangler deploy --dry-run",
+    "deploy": "wrangler deploy",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@giscore/services": "workspace:*",
+    "@hono/node-server": "^1.13.7",
+    "@hono/zod-validator": "^0.7.5",
+    "hono": "^4.6.0",
+    "unstorage": "^1.14.4",
+    "zod": "^4.1.13"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20241205.0",
+    "@giscore/eslint-config": "workspace:*",
+    "@giscore/tsconfig": "workspace:*",
+    "tsx": "^4.19.2",
+    "wrangler": "^4.54.0"
+  }
+}

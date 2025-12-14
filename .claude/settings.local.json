@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm create:*)",
+      "Bash(pnpm install:*)",
+      "Bash(corepack enable:*)",
+      "Bash(pnpm build:*)",
+      "Bash(pnpm typecheck:*)",
+      "Bash(pnpm lint:*)",
+      "Bash(pnpm --filter @giscore/server typecheck:*)",
+      "Bash(pnpm --filter @giscore/server lint:*)",
+      "Bash(pnpm --filter @giscore/server build:*)",
+      "Bash(dir:*)",
+      "Bash(pnpm --filter @giscore/services typecheck:*)",
+      "Bash(pnpm --filter @giscore/services build:*)",
+      "Bash(pnpm --filter @giscore/services lint:*)",
+      "Bash(pnpm --filter @giscore/react typecheck:*)",
+      "Bash(pnpm --filter @giscore/core typecheck:*)",
+      "Bash(pnpm --filter @giscore/example typecheck)",
+      "Bash(cat:*)",
+      "Bash(pnpm:*)"
+    ]
+  }
+}
