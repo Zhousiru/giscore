@@ -31,4 +31,5 @@ export type {
   CreatedReply,
   ToggleReactionResult,
   ToggleUpvoteResult,
+  RepliesResult,
 } from "./types";

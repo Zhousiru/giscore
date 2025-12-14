@@ -5,6 +5,8 @@ export {
   useInfiniteDiscussion,
   useSearchDiscussions,
   useInfiniteSearchDiscussions,
+  useReplies,
+  useInfiniteReplies,
   useAddComment,
   useAddReply,
   useToggleReaction,

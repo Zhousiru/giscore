@@ -40,8 +40,18 @@ const COMMENT_FIELDS = `
   isMinimized
   bodyHTML
   reactionGroups { ${REACTION_GROUPS_FIELDS} }
-  replies(last: 100) {
+`;
+
+const COMMENT_WITH_REPLIES_FIELDS = (replyFirst: number) => `
+  ${COMMENT_FIELDS}
+  replies(first: ${replyFirst}) {
     totalCount
+    pageInfo {
+      startCursor
+      endCursor
+      hasNextPage
+      hasPreviousPage
+    }
     nodes { ${REPLY_FIELDS} }
   }
 `;
@@ -61,7 +71,7 @@ const DISCUSSION_FIELDS = `
   reactionGroups { ${REACTION_GROUPS_FIELDS} }
 `;
 
-export const GET_DISCUSSION = `
+export const GET_DISCUSSION = (replyFirst = 3) => `
   query GetDiscussion(
     $owner: String!
     $repo: String!
@@ -82,7 +92,32 @@ export const GET_DISCUSSION = `
             hasNextPage
             hasPreviousPage
           }
-          nodes { ${COMMENT_FIELDS} }
+          nodes { ${COMMENT_WITH_REPLIES_FIELDS(replyFirst)} }
+        }
+      }
+    }
+  }
+`;
+
+export const GET_COMMENT_REPLIES = `
+  query GetCommentReplies(
+    $id: ID!
+    $first: Int
+    $last: Int
+    $after: String
+    $before: String
+  ) {
+    node(id: $id) {
+      ... on DiscussionComment {
+        replies(first: $first, last: $last, after: $after, before: $before) {
+          totalCount
+          pageInfo {
+            startCursor
+            endCursor
+            hasNextPage
+            hasPreviousPage
+          }
+          nodes { ${REPLY_FIELDS} }
         }
       }
     }
@@ -156,7 +191,7 @@ export const CREATE_DISCUSSION = `
 export const ADD_DISCUSSION_COMMENT = `
   mutation AddDiscussionComment($discussionId: ID!, $body: String!) {
     addDiscussionComment(input: { discussionId: $discussionId, body: $body }) {
-      comment { ${COMMENT_FIELDS} }
+      comment { ${COMMENT_WITH_REPLIES_FIELDS(3)} }
     }
   }
 `;

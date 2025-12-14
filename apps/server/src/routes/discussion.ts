@@ -31,6 +31,7 @@ const getQuery = z.object({
   last: z.string().optional(),
   after: z.string().optional(),
   before: z.string().optional(),
+  replyFirst: z.string().optional(),
 });
 
 const createJson = z.object({
@@ -40,9 +41,18 @@ const createJson = z.object({
   body: z.string(),
 });
 
+const repliesQuery = z.object({
+  repo: z.string(),
+  commentId: z.string(),
+  first: z.string().optional(),
+  last: z.string().optional(),
+  after: z.string().optional(),
+  before: z.string().optional(),
+});
+
 const routes = app
   .get("/", zValidator("query", getQuery), async (c) => {
-    const { repo, term, number, category, strict, first, last, after, before } =
+    const { repo, term, number, category, strict, first, last, after, before, replyFirst } =
       c.req.valid("query");
 
     const parsed = parseRepo(repo);
@@ -70,6 +80,7 @@ const routes = app
         last: last ? parseInt(last, 10) : undefined,
         after,
         before,
+        replyFirst: replyFirst ? parseInt(replyFirst, 10) : undefined,
       });
 
       if (!discussion) {
@@ -146,6 +157,39 @@ const routes = app
     });
 
     return c.json({ data: discussion });
+  })
+  .get("/replies", zValidator("query", repliesQuery), async (c) => {
+    const { repo, commentId, first, last, after, before } = c.req.valid("query");
+
+    const parsed = parseRepo(repo);
+    if (!parsed) {
+      throw new HTTPException(400, { message: "Invalid repo format" });
+    }
+
+    let token = getToken(c);
+    if (!token) {
+      const { GITHUB_APP_ID, GITHUB_APP_PRIVATE_KEY } = env<Env>(c);
+      token = await getAppAccessToken(repo, {
+        appId: GITHUB_APP_ID,
+        privateKey: GITHUB_APP_PRIVATE_KEY,
+      });
+    }
+
+    const client = new GitHubClient({ token });
+
+    const replies = await client.getReplies({
+      commentId,
+      first: first ? parseInt(first, 10) : undefined,
+      last: last ? parseInt(last, 10) : undefined,
+      after,
+      before,
+    });
+
+    if (!replies) {
+      throw new HTTPException(404, { message: "Comment not found" });
+    }
+
+    return c.json({ data: replies });
   });
 
 export const discussion = routes;

@@ -10,6 +10,7 @@ import type {
   ToggleUpvoteResult,
   PaginationParams,
   Viewer,
+  RepliesResult,
 } from "./types";
 
 const GITHUB_GRAPHQL_API = "https://api.github.com/graphql";
@@ -56,8 +57,14 @@ const ADD_COMMENT_MUTATION = `
           users { totalCount }
           viewerHasReacted
         }
-        replies(last: 100) {
+        replies(first: 3) {
           totalCount
+          pageInfo {
+            startCursor
+            endCursor
+            hasNextPage
+            hasPreviousPage
+          }
           nodes {
             id
             author { avatarUrl login url }
@@ -219,7 +226,7 @@ export class GiscoreClient {
 
   async getDiscussion(
     number: number,
-    pagination?: PaginationParams
+    pagination?: PaginationParams & { replyFirst?: number }
   ): Promise<Discussion | null> {
     const params = new URLSearchParams({
       repo: this.config.repo,
@@ -230,8 +237,26 @@ export class GiscoreClient {
     if (pagination?.last) params.set("last", String(pagination.last));
     if (pagination?.after) params.set("after", pagination.after);
     if (pagination?.before) params.set("before", pagination.before);
+    if (pagination?.replyFirst) params.set("replyFirst", String(pagination.replyFirst));
 
     return this.serverFetch<Discussion>(`/discussion?${params}`);
+  }
+
+  async getReplies(
+    commentId: string,
+    pagination?: PaginationParams
+  ): Promise<RepliesResult | null> {
+    const params = new URLSearchParams({
+      repo: this.config.repo,
+      commentId,
+    });
+
+    if (pagination?.first) params.set("first", String(pagination.first));
+    if (pagination?.last) params.set("last", String(pagination.last));
+    if (pagination?.after) params.set("after", pagination.after);
+    if (pagination?.before) params.set("before", pagination.before);
+
+    return this.serverFetch<RepliesResult>(`/discussion/replies?${params}`);
   }
 
   async searchDiscussions(

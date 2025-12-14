@@ -16,6 +16,7 @@ export type {
   CreatedReply,
   ToggleReactionResult,
   ToggleUpvoteResult,
+  RepliesResult,
 } from "@giscore/services";
 
 export interface GiscoreConfig {

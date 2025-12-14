@@ -9,9 +9,11 @@ import type {
   ToggleReactionResult,
   ToggleUpvoteResult,
   ReactionContent,
+  RepliesResult,
 } from "./types";
 import {
   GET_DISCUSSION,
+  GET_COMMENT_REPLIES,
   SEARCH_DISCUSSIONS,
   GET_REPOSITORY,
   CREATE_DISCUSSION,
@@ -51,11 +53,12 @@ export class GitHubClient {
     last?: number;
     after?: string;
     before?: string;
+    replyFirst?: number;
   }): Promise<Discussion | null> {
     try {
       const data = await this.graphql<{
         repository: { discussion: Discussion | null } | null;
-      }>(GET_DISCUSSION, {
+      }>(GET_DISCUSSION(params.replyFirst ?? 3), {
         owner: params.owner,
         repo: params.repo,
         number: params.number,
@@ -72,6 +75,26 @@ export class GitHubClient {
       }
       throw err;
     }
+  }
+
+  async getReplies(params: {
+    commentId: string;
+    first?: number;
+    last?: number;
+    after?: string;
+    before?: string;
+  }): Promise<RepliesResult | null> {
+    const data = await this.graphql<{
+      node: { replies: RepliesResult } | null;
+    }>(GET_COMMENT_REPLIES, {
+      id: params.commentId,
+      first: params.first ?? 20,
+      last: params.last,
+      after: params.after,
+      before: params.before,
+    });
+
+    return data.node?.replies ?? null;
   }
 
   async searchDiscussions(params: {

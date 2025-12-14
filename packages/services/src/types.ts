@@ -60,6 +60,7 @@ export interface Comment {
   reactionGroups: ReactionGroup[];
   replies: {
     totalCount: number;
+    pageInfo: PageInfo;
     nodes: Reply[];
   };
 }
@@ -126,6 +127,7 @@ export interface CreatedComment {
   reactionGroups: ReactionGroup[];
   replies: {
     totalCount: number;
+    pageInfo: PageInfo;
     nodes: Reply[];
   };
 }
@@ -156,4 +158,10 @@ export interface ToggleUpvoteResult {
   subject: {
     upvoteCount: number;
   };
+}
+
+export interface RepliesResult {
+  totalCount: number;
+  pageInfo: PageInfo;
+  nodes: Reply[];
 }

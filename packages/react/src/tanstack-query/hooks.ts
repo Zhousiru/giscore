@@ -15,6 +15,7 @@ import type {
   ToggleReactionResult,
   ToggleUpvoteResult,
   Viewer,
+  RepliesResult,
 } from "@giscore/core";
 import { useGiscore } from "../context";
 
@@ -30,6 +31,10 @@ export const giscoreKeys = {
     [...giscoreKeys.discussions(), "search", term] as const,
   searchInfinite: (term: string) =>
     [...giscoreKeys.discussions(), "search", term, "infinite"] as const,
+  replies: (commentId: string) =>
+    [...giscoreKeys.all, "replies", commentId] as const,
+  repliesInfinite: (commentId: string) =>
+    [...giscoreKeys.all, "replies", commentId, "infinite"] as const,
 };
 
 export function useViewer(
@@ -119,6 +124,43 @@ export function useInfiniteSearchDiscussions(term: string, pageSize = 10) {
         ? firstPage.pageInfo.startCursor ?? undefined
         : undefined,
     enabled: !!term,
+  });
+}
+
+export function useReplies(
+  commentId: string,
+  options?: Omit<UseQueryOptions<RepliesResult | null>, "queryKey" | "queryFn">
+) {
+  const { client } = useGiscore();
+
+  return useQuery({
+    queryKey: giscoreKeys.replies(commentId),
+    queryFn: () => client.getReplies(commentId),
+    enabled: !!commentId,
+    ...options,
+  });
+}
+
+export function useInfiniteReplies(commentId: string, pageSize = 10) {
+  const { client } = useGiscore();
+
+  return useInfiniteQuery({
+    queryKey: giscoreKeys.repliesInfinite(commentId),
+    queryFn: ({ pageParam }) =>
+      client.getReplies(commentId, {
+        first: pageSize,
+        after: pageParam,
+      }),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (lastPage) =>
+      lastPage?.pageInfo.hasNextPage
+        ? lastPage.pageInfo.endCursor ?? undefined
+        : undefined,
+    getPreviousPageParam: (firstPage) =>
+      firstPage?.pageInfo.hasPreviousPage
+        ? firstPage.pageInfo.startCursor ?? undefined
+        : undefined,
+    enabled: !!commentId,
   });
 }
 
