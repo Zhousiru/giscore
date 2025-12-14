@@ -12,19 +12,19 @@
   },
   "dependencies": {
     "@giscore/core": "workspace:^",
-    "@giscore/react": "workspace:*",
-    "@tanstack/react-query": "^5.80.6",
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0"
+    "@giscore/react": "workspace:^",
+    "@tanstack/react-query": "^5.90.12",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3"
   },
   "devDependencies": {
-    "@giscore/eslint-config": "workspace:*",
-    "@giscore/tsconfig": "workspace:*",
-    "@tailwindcss/vite": "^4.0.0",
-    "@types/react": "^19.2.5",
+    "@giscore/eslint-config": "workspace:^",
+    "@giscore/tsconfig": "workspace:^",
+    "@tailwindcss/vite": "^4.1.18",
+    "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
-    "@vitejs/plugin-react": "^5.1.1",
-    "tailwindcss": "^4.0.0",
-    "vite": "^7.2.4"
+    "@vitejs/plugin-react": "^5.1.2",
+    "tailwindcss": "^4.1.18",
+    "vite": "^7.2.7"
   }
 }

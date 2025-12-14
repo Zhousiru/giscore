@@ -21,8 +21,8 @@
     "@octokit/graphql": "^9.0.3"
   },
   "devDependencies": {
-    "@giscore/eslint-config": "workspace:*",
-    "@giscore/tsconfig": "workspace:*",
-    "tsup": "^8.3.0"
+    "@giscore/eslint-config": "workspace:^",
+    "@giscore/tsconfig": "workspace:^",
+    "tsup": "^8.5.1"
   }
 }
