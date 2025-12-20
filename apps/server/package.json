@@ -13,16 +13,17 @@
   "dependencies": {
     "@giscore/services": "workspace:^",
     "@hono/node-server": "^1.19.7",
-    "@hono/zod-validator": "^0.7.5",
-    "hono": "^4.11.0",
+    "@hono/zod-validator": "^0.7.6",
+    "consola": "^3.4.2",
+    "hono": "^4.11.1",
     "unstorage": "^1.17.3",
-    "zod": "^4.1.13"
+    "zod": "^4.2.1"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^4.20251213.0",
+    "@cloudflare/workers-types": "^4.20251218.0",
     "@giscore/eslint-config": "workspace:^",
     "@giscore/tsconfig": "workspace:^",
     "tsx": "^4.21.0",
-    "wrangler": "^4.54.0"
+    "wrangler": "^4.56.0"
   }
 }

@@ -135,6 +135,9 @@ const routes = app
   .post("/logout", (c) => {
     deleteCookie(c, SESSION_COOKIE, { path: "/" });
     return c.json(Ok(null));
+  })
+  .get("/health", () => {
+    throw new Error("test error");
   });
 
 export const oauthRoutes = routes;
