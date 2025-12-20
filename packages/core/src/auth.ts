@@ -7,14 +7,8 @@ export interface PopupLoginOptions {
   onError?: (error: Error) => void;
 }
 
-export interface AuthState {
-  session: string | null;
-  token: string | null;
-}
-
 const POPUP_WIDTH = 500;
 const POPUP_HEIGHT = 700;
-const STORAGE_KEY = "giscore_session";
 
 function getPopupPosition(width: number, height: number) {
   const left = window.screenX + (window.outerWidth - width) / 2;
@@ -43,65 +37,33 @@ export function openLoginPopup(options: PopupLoginOptions): Window | null {
   return popup;
 }
 
-export async function exchangeSession(
-  serverUrl: string,
-  session: string
-): Promise<string> {
+export async function exchangeSession(serverUrl: string): Promise<string> {
   const response = await fetch(`${serverUrl}/oauth/token`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ session }),
+    method: "GET",
+    credentials: "include",
   });
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({}));
     throw new Error(
-      (error as { message?: string }).message || "Failed to exchange session"
+      (error as { msg?: string }).msg || "Failed to exchange session"
     );
   }
 
-  const data = (await response.json()) as { token: string };
-  return data.token;
-}
-
-export function saveSession(session: string): void {
-  try {
-    localStorage.setItem(STORAGE_KEY, session);
-  } catch {
-    // localStorage not available
-  }
-}
-
-export function loadSession(): string | null {
-  try {
-    return localStorage.getItem(STORAGE_KEY);
-  } catch {
-    return null;
-  }
-}
-
-export function clearSession(): void {
-  try {
-    localStorage.removeItem(STORAGE_KEY);
-  } catch {
-    // localStorage not available
-  }
+  const data = (await response.json()) as { data: { token: string } };
+  return data.data.token;
 }
 
 export function parseCallbackParams(): {
-  session: string | null;
   error: string | null;
 } {
   const params = new URLSearchParams(window.location.search);
   return {
-    session: params.get("giscore"),
     error: params.get("giscore_error"),
   };
 }
 
-export type LoginResult =
-  | { success: true; session: string }
-  | { success: false; error: string };
+export type LoginResult = { success: true } | { success: false; error: string };
 
 export function createLoginHandler(
   serverUrl: string,
@@ -112,12 +74,12 @@ export function createLoginHandler(
   const handleMessage = (event: MessageEvent) => {
     if (event.origin !== window.location.origin) return;
 
-    const data = event.data as { type?: string; session?: string; error?: string };
+    const data = event.data as { type?: string; error?: string };
     if (data.type === "giscore-oauth-callback") {
-      if (data.session) {
-        onResult({ success: true, session: data.session });
-      } else if (data.error) {
+      if (data.error) {
         onResult({ success: false, error: data.error });
+      } else {
+        onResult({ success: true });
       }
     }
   };

@@ -12,9 +12,6 @@ import {
   GiscoreClient,
   openLoginPopup,
   exchangeSession,
-  saveSession,
-  loadSession,
-  clearSession,
   type GiscoreConfig,
 } from "@giscore/core";
 
@@ -22,7 +19,6 @@ interface GiscoreContextValue {
   client: GiscoreClient;
   config: GiscoreConfig;
   token: string | undefined;
-  session: string | undefined;
   isAuthenticated: boolean;
   isLoading: boolean;
   login: () => void;
@@ -35,52 +31,35 @@ const GiscoreContext = createContext<GiscoreContextValue | null>(null);
 export interface GiscoreProviderProps {
   config: GiscoreConfig;
   children: ReactNode;
-  persistSession?: boolean;
 }
 
-export function GiscoreProvider({
-  config,
-  children,
-  persistSession = true,
-}: GiscoreProviderProps) {
+export function GiscoreProvider({ config, children }: GiscoreProviderProps) {
   const [token, setTokenState] = useState<string | undefined>(config.token);
-  const [session, setSession] = useState<string | undefined>();
   const [isLoading, setIsLoading] = useState(false);
   const popupRef = useRef<Window | null>(null);
   const pollIntervalRef = useRef<number | undefined>(undefined);
 
   const client = useMemo(
     () => new GiscoreClient({ ...config, token }),
-    [
-      config.serverUrl,
-      config.repo,
-      config.category,
-      config.term,
-      config.strict,
-      token,
-    ]
+    [config, token]
   );
 
-  // Restore session from localStorage on mount
+  // Try to restore session from cookie on mount
   useEffect(() => {
-    if (!persistSession || token) return;
+    if (token) return;
 
-    const savedSession = loadSession();
-    if (savedSession) {
-      setIsLoading(true);
-      exchangeSession(config.serverUrl, savedSession)
-        .then((t) => {
-          setSession(savedSession);
-          setTokenState(t);
-        })
-        .catch(() => {
-          clearSession();
-        })
-        .finally(() => {
-          setIsLoading(false);
-        });
-    }
-  }, [config.serverUrl, persistSession, token]);
+    setIsLoading(true);
+    exchangeSession(config.serverUrl)
+      .then((t) => {
+        setTokenState(t);
+      })
+      .catch(() => {
+        // No valid session cookie
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+  }, [config.serverUrl, token]);
 
   const setToken = useCallback((newToken: string | undefined) => {
     setTokenState(newToken);
@@ -96,12 +75,14 @@ export function GiscoreProvider({
 
     if (!popupRef.current) {
       // Popup blocked, fall back to redirect
-      const params = new URLSearchParams({ redirect_uri: window.location.href });
+      const params = new URLSearchParams({
+        redirect_uri: window.location.href,
+      });
       window.location.href = `${config.serverUrl}/oauth/authorize?${params}`;
       return;
     }
 
-    // Poll for popup closure and check for session in opener
+    // Poll for popup closure
     pollIntervalRef.current = window.setInterval(() => {
       if (popupRef.current?.closed) {
         window.clearInterval(pollIntervalRef.current);
@@ -110,13 +91,13 @@ export function GiscoreProvider({
     }, 500);
   }, [config.serverUrl]);
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
     setTokenState(undefined);
-    setSession(undefined);
-    if (persistSession) {
-      clearSession();
-    }
-  }, [persistSession]);
+    await fetch(`${config.serverUrl}/oauth/logout`, {
+      method: "POST",
+      credentials: "include",
+    }).catch(() => {});
+  }, [config.serverUrl]);
 
   // Handle OAuth callback message from popup
   useEffect(() => {
@@ -125,7 +106,6 @@ export function GiscoreProvider({
 
       const data = event.data as {
         type?: string;
-        session?: string;
         error?: string;
       };
 
@@ -138,15 +118,11 @@ export function GiscoreProvider({
           window.clearInterval(pollIntervalRef.current);
         }
 
-        if (data.session) {
+        if (!data.error) {
           setIsLoading(true);
           try {
-            const t = await exchangeSession(config.serverUrl, data.session);
-            setSession(data.session);
+            const t = await exchangeSession(config.serverUrl);
             setTokenState(t);
-            if (persistSession) {
-              saveSession(data.session);
-            }
           } catch {
             // Session exchange failed
           } finally {
@@ -158,7 +134,7 @@ export function GiscoreProvider({
 
     window.addEventListener("message", handleMessage);
     return () => window.removeEventListener("message", handleMessage);
-  }, [config.serverUrl, persistSession]);
+  }, [config.serverUrl]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -174,14 +150,13 @@ export function GiscoreProvider({
       client,
       config: { ...config, token },
       token,
-      session,
       isAuthenticated: !!token,
       isLoading,
       login,
       logout,
       setToken,
     }),
-    [client, config, token, session, isLoading, login, logout, setToken]
+    [client, config, token, isLoading, login, logout, setToken]
   );
 
   return (

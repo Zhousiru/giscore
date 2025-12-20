@@ -52,8 +52,18 @@ const repliesQuery = z.object({
 
 const routes = app
   .get("/", zValidator("query", getQuery), async (c) => {
-    const { repo, term, number, category, strict, first, last, after, before, replyFirst } =
-      c.req.valid("query");
+    const {
+      repo,
+      term,
+      number,
+      category,
+      strict,
+      first,
+      last,
+      after,
+      before,
+      replyFirst,
+    } = c.req.valid("query");
 
     const parsed = parseRepo(repo);
     if (!parsed) {
@@ -159,7 +169,8 @@ const routes = app
     return c.json({ data: discussion });
   })
   .get("/replies", zValidator("query", repliesQuery), async (c) => {
-    const { repo, commentId, first, last, after, before } = c.req.valid("query");
+    const { repo, commentId, first, last, after, before } =
+      c.req.valid("query");
 
     const parsed = parseRepo(repo);
     if (!parsed) {
@@ -192,5 +203,5 @@ const routes = app
     return c.json({ data: replies });
   });
 
-export const discussion = routes;
+export const discussionRoutes = routes;
 export type DiscussionRoutes = typeof routes;

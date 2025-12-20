@@ -1,12 +1,17 @@
 import { Hono } from "hono";
 import { env } from "hono/adapter";
+import { setCookie, getCookie, deleteCookie } from "hono/cookie";
 import { HTTPException } from "hono/http-exception";
 import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 import type { Env } from "../env";
 import { encodeState, decodeState, encodeSession } from "../lib/encryption";
+import { IS_DEV } from "../lib/constants";
+import { Ok } from "../lib/resp";
 
 const GITHUB_OAUTH_URL = "https://github.com/login/oauth";
+const STATE_COOKIE = "giscore_state";
+const SESSION_COOKIE = "giscore_session";
 
 const app = new Hono();
 
@@ -20,16 +25,20 @@ const callbackQuery = z.object({
   error: z.string().optional(),
 });
 
-const tokenBody = z.object({
-  session: z.string(),
-});
-
 const routes = app
   .get("/authorize", zValidator("query", authorizeQuery), async (c) => {
     const { redirect_uri } = c.req.valid("query");
     const { GITHUB_CLIENT_ID, ENCRYPTION_PASSWORD } = env<Env>(c);
 
     const state = await encodeState(redirect_uri, ENCRYPTION_PASSWORD);
+
+    setCookie(c, STATE_COOKIE, state, {
+      httpOnly: true,
+      secure: !IS_DEV,
+      sameSite: "Lax",
+      path: "/oauth",
+      maxAge: 5 * 60,
+    });
 
     const params = new URLSearchParams({
       client_id: GITHUB_CLIENT_ID,
@@ -44,14 +53,12 @@ const routes = app
     const { GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET, ENCRYPTION_PASSWORD } =
       env<Env>(c);
 
-    let returnUrl: string;
-    try {
-      returnUrl = await decodeState(state, ENCRYPTION_PASSWORD);
-    } catch (err) {
-      throw new HTTPException(400, {
-        message: err instanceof Error ? err.message : "Invalid state",
-      });
+    const cookieState = getCookie(c, STATE_COOKIE);
+    if (!cookieState || cookieState !== state) {
+      throw new HTTPException(400, { message: "state mismatch" });
     }
+
+    const returnUrl = await decodeState(state, ENCRYPTION_PASSWORD);
 
     const url = new URL(returnUrl);
 
@@ -62,7 +69,7 @@ const routes = app
     }
 
     if (!code) {
-      throw new HTTPException(400, { message: "Authorization code required" });
+      throw new HTTPException(400, { message: "authorization code required" });
     }
 
     const response = await fetch(`${GITHUB_OAUTH_URL}/access_token`, {
@@ -79,7 +86,7 @@ const routes = app
     });
 
     if (!response.ok) {
-      throw new HTTPException(500, { message: "Failed to exchange code" });
+      throw new HTTPException(500, { message: "failed to exchange code" });
     }
 
     const data = (await response.json()) as {
@@ -90,18 +97,28 @@ const routes = app
 
     if (data.error || !data.access_token) {
       throw new HTTPException(400, {
-        message: data.error_description ?? data.error ?? "No access token",
+        message: data.error_description ?? data.error ?? "no access token",
       });
     }
 
-    // Encrypt the token as a session
     const session = await encodeSession(data.access_token, ENCRYPTION_PASSWORD);
 
-    url.searchParams.set("giscore", session);
+    setCookie(c, SESSION_COOKIE, session, {
+      httpOnly: true,
+      secure: !IS_DEV,
+      sameSite: "Strict",
+      path: "/",
+      maxAge: 365 * 24 * 60 * 60, // 1 year
+    });
+
     return c.redirect(url.toString());
   })
-  .post("/token", zValidator("json", tokenBody), async (c) => {
-    const { session } = c.req.valid("json");
+  .get("/token", async (c) => {
+    const session = getCookie(c, SESSION_COOKIE);
+    if (!session) {
+      throw new HTTPException(401, { message: "no session" });
+    }
+
     const { ENCRYPTION_PASSWORD } = env<Env>(c);
 
     let token: string;
@@ -109,12 +126,16 @@ const routes = app
       token = await decodeState(session, ENCRYPTION_PASSWORD);
     } catch (err) {
       throw new HTTPException(400, {
-        message: err instanceof Error ? err.message : "Invalid session",
+        message: err instanceof Error ? err.message : "invalid session",
       });
     }
 
-    return c.json({ token });
+    return c.json(Ok({ token }));
+  })
+  .post("/logout", (c) => {
+    deleteCookie(c, SESSION_COOKIE, { path: "/" });
+    return c.json(Ok(null));
   });
 
-export const oauth = routes;
+export const oauthRoutes = routes;
 export type OAuthRoutes = typeof routes;

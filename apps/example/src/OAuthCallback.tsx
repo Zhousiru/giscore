@@ -3,26 +3,21 @@ import { parseCallbackParams } from "@giscore/core";
 
 export function OAuthCallback() {
   useEffect(() => {
-    const { session, error } = parseCallbackParams();
+    const { error } = parseCallbackParams();
 
     // Send message to opener (parent window)
     if (window.opener) {
       window.opener.postMessage(
         {
           type: "giscore-oauth-callback",
-          session,
           error,
         },
         window.location.origin
       );
       window.close();
     } else {
-      // If no opener (direct navigation), redirect to home with session
-      const url = new URL("/", window.location.origin);
-      if (session) {
-        url.searchParams.set("giscore", session);
-      }
-      window.location.href = url.toString();
+      // If no opener (direct navigation), redirect to home
+      window.location.href = "/";
     }
   }, []);
 

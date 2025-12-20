@@ -2,13 +2,9 @@ export { GiscoreClient } from "./client";
 export {
   openLoginPopup,
   exchangeSession,
-  saveSession,
-  loadSession,
-  clearSession,
   parseCallbackParams,
   createLoginHandler,
   type PopupLoginOptions,
-  type AuthState,
   type LoginResult,
 } from "./auth";
 export type {

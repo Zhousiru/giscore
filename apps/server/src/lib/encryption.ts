@@ -38,7 +38,10 @@ export async function aesGcmEncrypt(
   password: string
 ): Promise<string> {
   const encoder = new TextEncoder();
-  const pwHash = await crypto.subtle.digest("SHA-256", encoder.encode(password));
+  const pwHash = await crypto.subtle.digest(
+    "SHA-256",
+    encoder.encode(password)
+  );
   const iv = crypto.getRandomValues(new Uint8Array(12));
 
   const key = await crypto.subtle.importKey(
@@ -63,7 +66,10 @@ export async function aesGcmDecrypt(
   password: string
 ): Promise<string> {
   const encoder = new TextEncoder();
-  const pwHash = await crypto.subtle.digest("SHA-256", encoder.encode(password));
+  const pwHash = await crypto.subtle.digest(
+    "SHA-256",
+    encoder.encode(password)
+  );
   const iv = fromHex(ciphertext.slice(0, 24));
   const ct = fromBase64(ciphertext.slice(24));
 
@@ -84,45 +90,29 @@ export async function aesGcmDecrypt(
   return new TextDecoder().decode(plainBuffer);
 }
 
-const DEFAULT_VALIDITY_PERIOD = 5 * 60 * 1000; // 5 minutes
-const TOKEN_VALIDITY_PERIOD = 1000 * 60 * 60 * 24 * 365; // 1 year
-
-interface State {
-  value: string;
-  expires: number;
-}
-
 export async function encodeState(
-  value: string,
-  password: string,
-  expires = Date.now() + DEFAULT_VALIDITY_PERIOD
+  state: string,
+  password: string
 ): Promise<string> {
-  const state: State = { value, expires };
-  return aesGcmEncrypt(JSON.stringify(state), password);
+  return aesGcmEncrypt(state, password);
 }
 
 export async function decodeState(
   encryptedState: string,
   password: string
 ): Promise<string> {
-  let state: State;
+  let state: string;
   try {
-    const decrypted = await aesGcmDecrypt(encryptedState, password);
-    state = JSON.parse(decrypted);
+    state = await aesGcmDecrypt(encryptedState, password);
   } catch {
-    throw new Error("Invalid state value.");
+    throw new Error("Invalid state value");
   }
-  if (Date.now() > state.expires) {
-    throw new Error("State has expired.");
-  }
-  return state.value;
+  return state;
 }
 
 export async function encodeSession(
   token: string,
   password: string
 ): Promise<string> {
-  return encodeState(token, password, Date.now() + TOKEN_VALIDITY_PERIOD);
+  return aesGcmEncrypt(token, password);
 }
-
-export { TOKEN_VALIDITY_PERIOD };
