@@ -12,187 +12,38 @@ import type {
   Viewer,
   RepliesResult,
 } from './types'
-
-const GITHUB_GRAPHQL_API = 'https://api.github.com/graphql'
+import { GitHubClient } from '@giscore/services'
 
 interface ApiResponse<T> {
   data?: T
   error?: string
 }
 
-interface GraphQLResponse<T> {
-  data?: T
-  errors?: Array<{ message: string }>
-}
-
-const VIEWER_QUERY = `
-  query {
-    viewer {
-      login
-      avatarUrl
-      url
-    }
-  }
-`
-
-const ADD_COMMENT_MUTATION = `
-  mutation AddDiscussionComment($discussionId: ID!, $body: String!) {
-    addDiscussionComment(input: { discussionId: $discussionId, body: $body }) {
-      comment {
-        id
-        upvoteCount
-        viewerHasUpvoted
-        viewerCanUpvote
-        author { avatarUrl login url }
-        viewerDidAuthor
-        createdAt
-        url
-        authorAssociation
-        lastEditedAt
-        deletedAt
-        isMinimized
-        bodyHTML
-        reactionGroups {
-          content
-          users { totalCount }
-          viewerHasReacted
-        }
-        replies(first: 3) {
-          totalCount
-          pageInfo {
-            startCursor
-            endCursor
-            hasNextPage
-            hasPreviousPage
-          }
-          nodes {
-            id
-            author { avatarUrl login url }
-            viewerDidAuthor
-            createdAt
-            url
-            authorAssociation
-            lastEditedAt
-            deletedAt
-            isMinimized
-            bodyHTML
-            reactionGroups {
-              content
-              users { totalCount }
-              viewerHasReacted
-            }
-            replyTo { id }
-          }
-        }
-      }
-    }
-  }
-`
-
-const ADD_REPLY_MUTATION = `
-  mutation AddDiscussionReply($discussionId: ID!, $replyToId: ID!, $body: String!) {
-    addDiscussionComment(input: { discussionId: $discussionId, replyToId: $replyToId, body: $body }) {
-      comment {
-        id
-        author { avatarUrl login url }
-        viewerDidAuthor
-        createdAt
-        url
-        authorAssociation
-        lastEditedAt
-        deletedAt
-        isMinimized
-        bodyHTML
-        reactionGroups {
-          content
-          users { totalCount }
-          viewerHasReacted
-        }
-        replyTo { id }
-      }
-    }
-  }
-`
-
-const ADD_REACTION_MUTATION = `
-  mutation AddReaction($subjectId: ID!, $content: ReactionContent!) {
-    addReaction(input: { subjectId: $subjectId, content: $content }) {
-      reaction { id content }
-    }
-  }
-`
-
-const REMOVE_REACTION_MUTATION = `
-  mutation RemoveReaction($subjectId: ID!, $content: ReactionContent!) {
-    removeReaction(input: { subjectId: $subjectId, content: $content }) {
-      reaction { id content }
-    }
-  }
-`
-
-const ADD_UPVOTE_MUTATION = `
-  mutation AddUpvote($subjectId: ID!) {
-    addUpvote(input: { subjectId: $subjectId }) {
-      subject { upvoteCount }
-    }
-  }
-`
-
-const REMOVE_UPVOTE_MUTATION = `
-  mutation RemoveUpvote($subjectId: ID!) {
-    removeUpvote(input: { subjectId: $subjectId }) {
-      subject { upvoteCount }
-    }
-  }
-`
-
 export class GiscoreClient {
   private config: GiscoreConfig
+  private githubClient: GitHubClient | undefined
 
   constructor(config: GiscoreConfig) {
     this.config = config
+    this.githubClient = config.token
+      ? new GitHubClient({ token: config.token })
+      : undefined
   }
 
   updateToken(token: string | undefined) {
     this.config = { ...this.config, token }
+    this.githubClient = token ? new GitHubClient({ token }) : undefined
   }
 
   get isAuthenticated(): boolean {
     return !!this.config.token
   }
 
-  private async graphql<T>(
-    query: string,
-    variables?: Record<string, unknown>,
-  ): Promise<T> {
-    if (!this.config.token) {
+  private getGitHubClient(): GitHubClient {
+    if (!this.githubClient) {
       throw new Error('Authentication required')
     }
-
-    const response = await fetch(GITHUB_GRAPHQL_API, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${this.config.token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ query, variables }),
-    })
-
-    if (!response.ok) {
-      throw new Error(`GitHub API error: ${response.statusText}`)
-    }
-
-    const result: GraphQLResponse<T> = await response.json()
-
-    if (result.errors && result.errors.length > 0) {
-      throw new Error(result.errors[0]?.message ?? 'GraphQL error')
-    }
-
-    if (!result.data) {
-      throw new Error('No data returned')
-    }
-
-    return result.data
+    return this.githubClient
   }
 
   private async serverFetch<T>(
@@ -304,19 +155,14 @@ export class GiscoreClient {
   // === Write operations (direct GitHub API with user token) ===
 
   async getViewer(): Promise<Viewer> {
-    const data = await this.graphql<{ viewer: Viewer }>(VIEWER_QUERY)
-    return data.viewer
+    return this.getGitHubClient().getViewer()
   }
 
   async addComment(
     discussionId: string,
     body: string,
   ): Promise<CreatedComment> {
-    const data = await this.graphql<{
-      addDiscussionComment: { comment: CreatedComment }
-    }>(ADD_COMMENT_MUTATION, { discussionId, body })
-
-    return data.addDiscussionComment.comment
+    return this.getGitHubClient().addComment({ discussionId, body })
   }
 
   async addReply(
@@ -324,11 +170,7 @@ export class GiscoreClient {
     replyToId: string,
     body: string,
   ): Promise<CreatedReply> {
-    const data = await this.graphql<{
-      addDiscussionComment: { comment: CreatedReply }
-    }>(ADD_REPLY_MUTATION, { discussionId, replyToId, body })
-
-    return data.addDiscussionComment.comment
+    return this.getGitHubClient().addReply({ discussionId, replyToId, body })
   }
 
   async toggleReaction(
@@ -336,38 +178,21 @@ export class GiscoreClient {
     content: ReactionContent,
     hasReacted: boolean,
   ): Promise<ToggleReactionResult> {
-    if (hasReacted) {
-      const data = await this.graphql<{ removeReaction: ToggleReactionResult }>(
-        REMOVE_REACTION_MUTATION,
-        { subjectId, content },
-      )
-      return data.removeReaction
-    }
-
-    const data = await this.graphql<{ addReaction: ToggleReactionResult }>(
-      ADD_REACTION_MUTATION,
-      { subjectId, content },
-    )
-    return data.addReaction
+    return this.getGitHubClient().toggleReaction({
+      subjectId,
+      content,
+      viewerHasReacted: hasReacted,
+    })
   }
 
   async toggleUpvote(
     subjectId: string,
     hasUpvoted: boolean,
   ): Promise<ToggleUpvoteResult> {
-    if (hasUpvoted) {
-      const data = await this.graphql<{ removeUpvote: ToggleUpvoteResult }>(
-        REMOVE_UPVOTE_MUTATION,
-        { subjectId },
-      )
-      return data.removeUpvote
-    }
-
-    const data = await this.graphql<{ addUpvote: ToggleUpvoteResult }>(
-      ADD_UPVOTE_MUTATION,
-      { subjectId },
-    )
-    return data.addUpvote
+    return this.getGitHubClient().toggleUpvote({
+      subjectId,
+      viewerHasUpvoted: hasUpvoted,
+    })
   }
 
   // === Auth ===

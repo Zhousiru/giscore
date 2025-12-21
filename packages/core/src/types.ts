@@ -1,7 +1,8 @@
-import type { Discussion as DiscussionType } from '@giscore/services'
+import type { Discussion as DiscussionType, Viewer } from '@giscore/services'
 
 export type {
   ReactionContent,
+  Viewer,
   Author,
   ReactionGroup,
   PageInfo,
@@ -33,12 +34,6 @@ export interface PaginationParams {
   last?: number
   after?: string
   before?: string
-}
-
-export interface Viewer {
-  login: string
-  avatarUrl: string
-  url: string
 }
 
 export interface GiscoreData {

@@ -1,18 +1,24 @@
-const AUTHOR_FIELDS = `
+// GraphQL Fragments for reusable field sets
+const AUTHOR_FRAGMENT = `
+fragment AuthorFields on Actor {
   avatarUrl
   login
   url
+}
 `
 
-const REACTION_GROUPS_FIELDS = `
+const REACTION_GROUPS_FRAGMENT = `
+fragment ReactionGroupFields on ReactionGroup {
   content
   users { totalCount }
   viewerHasReacted
+}
 `
 
-const REPLY_FIELDS = `
+const REPLY_FRAGMENT = `
+fragment ReplyFields on DiscussionComment {
   id
-  author { ${AUTHOR_FIELDS} }
+  author { ...AuthorFields }
   viewerDidAuthor
   createdAt
   url
@@ -20,17 +26,20 @@ const REPLY_FIELDS = `
   lastEditedAt
   deletedAt
   isMinimized
+  body
   bodyHTML
-  reactionGroups { ${REACTION_GROUPS_FIELDS} }
+  reactionGroups { ...ReactionGroupFields }
   replyTo { id }
+}
 `
 
-const COMMENT_FIELDS = `
+const COMMENT_FRAGMENT = `
+fragment CommentFields on DiscussionComment {
   id
   upvoteCount
   viewerHasUpvoted
   viewerCanUpvote
-  author { ${AUTHOR_FIELDS} }
+  author { ...AuthorFields }
   viewerDidAuthor
   createdAt
   url
@@ -38,13 +47,16 @@ const COMMENT_FIELDS = `
   lastEditedAt
   deletedAt
   isMinimized
+  body
   bodyHTML
-  reactionGroups { ${REACTION_GROUPS_FIELDS} }
+  reactionGroups { ...ReactionGroupFields }
+}
 `
 
-const COMMENT_WITH_REPLIES_FIELDS = (replyFirst: number) => `
-  ${COMMENT_FIELDS}
-  replies(first: ${replyFirst}) {
+const COMMENT_WITH_REPLIES_FRAGMENT = `
+fragment CommentWithRepliesFields on DiscussionComment {
+  ...CommentFields
+  replies(first: $replyFirst, last: $replyLast) {
     totalCount
     pageInfo {
       startCursor
@@ -52,11 +64,13 @@ const COMMENT_WITH_REPLIES_FIELDS = (replyFirst: number) => `
       hasNextPage
       hasPreviousPage
     }
-    nodes { ${REPLY_FIELDS} }
+    nodes { ...ReplyFields }
   }
+}
 `
 
-const DISCUSSION_FIELDS = `
+const DISCUSSION_FRAGMENT = `
+fragment DiscussionFields on Discussion {
   id
   number
   title
@@ -65,13 +79,27 @@ const DISCUSSION_FIELDS = `
   url
   locked
   createdAt
-  author { ${AUTHOR_FIELDS} }
+  author { ...AuthorFields }
   category { id name slug }
   reactions { totalCount }
-  reactionGroups { ${REACTION_GROUPS_FIELDS} }
+  reactionGroups { ...ReactionGroupFields }
+}
 `
 
-export const GET_DISCUSSION = (replyFirst = 3) => `
+const COMMENT_FRAGMENTS = `
+  ${AUTHOR_FRAGMENT}
+  ${REACTION_GROUPS_FRAGMENT}
+  ${REPLY_FRAGMENT}
+  ${COMMENT_FRAGMENT}
+  ${COMMENT_WITH_REPLIES_FRAGMENT}
+`
+
+const DISCUSSION_FRAGMENTS = `
+  ${COMMENT_FRAGMENTS}
+  ${DISCUSSION_FRAGMENT}
+`
+
+export const GET_DISCUSSION = `
   query GetDiscussion(
     $owner: String!
     $repo: String!
@@ -80,10 +108,12 @@ export const GET_DISCUSSION = (replyFirst = 3) => `
     $last: Int
     $after: String
     $before: String
+    $replyFirst: Int
+    $replyLast: Int
   ) {
     repository(owner: $owner, name: $repo) {
       discussion(number: $number) {
-        ${DISCUSSION_FIELDS}
+        ...DiscussionFields
         comments(first: $first, last: $last, after: $after, before: $before) {
           totalCount
           pageInfo {
@@ -92,11 +122,12 @@ export const GET_DISCUSSION = (replyFirst = 3) => `
             hasNextPage
             hasPreviousPage
           }
-          nodes { ${COMMENT_WITH_REPLIES_FIELDS(replyFirst)} }
+          nodes { ...CommentWithRepliesFields }
         }
       }
     }
   }
+  ${DISCUSSION_FRAGMENTS}
 `
 
 export const GET_COMMENT_REPLIES = `
@@ -117,11 +148,14 @@ export const GET_COMMENT_REPLIES = `
             hasNextPage
             hasPreviousPage
           }
-          nodes { ${REPLY_FIELDS} }
+          nodes { ...ReplyFields }
         }
       }
     }
   }
+  ${AUTHOR_FRAGMENT}
+  ${REACTION_GROUPS_FRAGMENT}
+  ${REPLY_FRAGMENT}
 `
 
 export const SEARCH_DISCUSSIONS = `
@@ -149,7 +183,7 @@ export const SEARCH_DISCUSSIONS = `
       }
       nodes {
         ... on Discussion {
-          ${DISCUSSION_FIELDS}
+          ...DiscussionFields
           comments(first: 0) {
             totalCount
           }
@@ -157,6 +191,9 @@ export const SEARCH_DISCUSSIONS = `
       }
     }
   }
+  ${AUTHOR_FRAGMENT}
+  ${REACTION_GROUPS_FRAGMENT}
+  ${DISCUSSION_FRAGMENT}
 `
 
 export const GET_REPOSITORY = `
@@ -166,6 +203,16 @@ export const GET_REPOSITORY = `
       discussionCategories(first: 20) {
         nodes { id name slug }
       }
+    }
+  }
+`
+
+export const GET_VIEWER = `
+  query GetViewer {
+    viewer {
+      login
+      avatarUrl
+      url
     }
   }
 `
@@ -189,36 +236,36 @@ export const CREATE_DISCUSSION = `
 `
 
 export const ADD_DISCUSSION_COMMENT = `
-  mutation AddDiscussionComment($discussionId: ID!, $body: String!) {
+  mutation AddDiscussionComment(
+    $discussionId: ID!
+    $body: String!
+    $replyFirst: Int
+    $replyLast: Int
+  ) {
     addDiscussionComment(input: { discussionId: $discussionId, body: $body }) {
-      comment { ${COMMENT_WITH_REPLIES_FIELDS(3)} }
+      comment { ...CommentWithRepliesFields }
     }
   }
+  ${COMMENT_FRAGMENTS}
 `
 
 export const ADD_DISCUSSION_REPLY = `
-  mutation AddDiscussionReply($discussionId: ID!, $replyToId: ID!, $body: String!) {
+  mutation AddDiscussionReply(
+    $discussionId: ID!
+    $replyToId: ID!
+    $body: String!
+  ) {
     addDiscussionComment(input: {
       discussionId: $discussionId
       replyToId: $replyToId
       body: $body
     }) {
-      comment {
-        id
-        author { ${AUTHOR_FIELDS} }
-        viewerDidAuthor
-        createdAt
-        url
-        authorAssociation
-        lastEditedAt
-        deletedAt
-        isMinimized
-        bodyHTML
-        reactionGroups { ${REACTION_GROUPS_FIELDS} }
-        replyTo { id }
-      }
+      comment { ...ReplyFields }
     }
   }
+  ${AUTHOR_FRAGMENT}
+  ${REACTION_GROUPS_FRAGMENT}
+  ${REPLY_FRAGMENT}
 `
 
 export const ADD_REACTION = `
