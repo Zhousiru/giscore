@@ -1,167 +1,167 @@
 export type ReactionContent =
-  | "THUMBS_UP"
-  | "THUMBS_DOWN"
-  | "LAUGH"
-  | "HOORAY"
-  | "CONFUSED"
-  | "HEART"
-  | "ROCKET"
-  | "EYES";
+  | 'THUMBS_UP'
+  | 'THUMBS_DOWN'
+  | 'LAUGH'
+  | 'HOORAY'
+  | 'CONFUSED'
+  | 'HEART'
+  | 'ROCKET'
+  | 'EYES'
 
 export interface Author {
-  login: string;
-  avatarUrl: string;
-  url?: string;
+  login: string
+  avatarUrl: string
+  url?: string
 }
 
 export interface ReactionGroup {
-  content: ReactionContent;
-  users: { totalCount: number };
-  viewerHasReacted: boolean;
+  content: ReactionContent
+  users: { totalCount: number }
+  viewerHasReacted: boolean
 }
 
 export interface PageInfo {
-  startCursor: string | null;
-  endCursor: string | null;
-  hasNextPage: boolean;
-  hasPreviousPage: boolean;
+  startCursor: string | null
+  endCursor: string | null
+  hasNextPage: boolean
+  hasPreviousPage: boolean
 }
 
 export interface Reply {
-  id: string;
-  author: Author | null;
-  viewerDidAuthor: boolean;
-  createdAt: string;
-  url: string;
-  authorAssociation: string;
-  lastEditedAt: string | null;
-  deletedAt: string | null;
-  isMinimized: boolean;
-  bodyHTML: string;
-  reactionGroups: ReactionGroup[];
-  replyTo: { id: string } | null;
+  id: string
+  author: Author | null
+  viewerDidAuthor: boolean
+  createdAt: string
+  url: string
+  authorAssociation: string
+  lastEditedAt: string | null
+  deletedAt: string | null
+  isMinimized: boolean
+  bodyHTML: string
+  reactionGroups: ReactionGroup[]
+  replyTo: { id: string } | null
 }
 
 export interface Comment {
-  id: string;
-  upvoteCount: number;
-  viewerHasUpvoted: boolean;
-  viewerCanUpvote: boolean;
-  author: Author | null;
-  viewerDidAuthor: boolean;
-  createdAt: string;
-  url: string;
-  authorAssociation: string;
-  lastEditedAt: string | null;
-  deletedAt: string | null;
-  isMinimized: boolean;
-  body?: string;
-  bodyHTML: string;
-  reactionGroups: ReactionGroup[];
+  id: string
+  upvoteCount: number
+  viewerHasUpvoted: boolean
+  viewerCanUpvote: boolean
+  author: Author | null
+  viewerDidAuthor: boolean
+  createdAt: string
+  url: string
+  authorAssociation: string
+  lastEditedAt: string | null
+  deletedAt: string | null
+  isMinimized: boolean
+  body?: string
+  bodyHTML: string
+  reactionGroups: ReactionGroup[]
   replies: {
-    totalCount: number;
-    pageInfo: PageInfo;
-    nodes: Reply[];
-  };
+    totalCount: number
+    pageInfo: PageInfo
+    nodes: Reply[]
+  }
 }
 
 export interface DiscussionCategory {
-  id: string;
-  name: string;
-  slug: string;
+  id: string
+  name: string
+  slug: string
 }
 
 export interface Discussion {
-  id: string;
-  number: number;
-  title: string;
-  body: string;
-  bodyHTML: string;
-  url: string;
-  locked: boolean;
-  createdAt: string;
-  author: Author | null;
-  category: DiscussionCategory;
-  reactionGroups: ReactionGroup[];
-  reactions: { totalCount: number };
+  id: string
+  number: number
+  title: string
+  body: string
+  bodyHTML: string
+  url: string
+  locked: boolean
+  createdAt: string
+  author: Author | null
+  category: DiscussionCategory
+  reactionGroups: ReactionGroup[]
+  reactions: { totalCount: number }
   comments: {
-    totalCount: number;
-    pageInfo: PageInfo;
-    nodes: Comment[];
-  };
+    totalCount: number
+    pageInfo: PageInfo
+    nodes: Comment[]
+  }
 }
 
 export interface DiscussionSearchResult {
-  discussionCount: number;
-  pageInfo: PageInfo;
-  nodes: Discussion[];
+  discussionCount: number
+  pageInfo: PageInfo
+  nodes: Discussion[]
 }
 
 export interface Repository {
-  id: string;
+  id: string
   discussionCategories: {
-    nodes: DiscussionCategory[];
-  };
+    nodes: DiscussionCategory[]
+  }
 }
 
 export interface CreatedDiscussion {
-  id: string;
-  number: number;
-  url: string;
+  id: string
+  number: number
+  url: string
 }
 
 export interface CreatedComment {
-  id: string;
-  upvoteCount: number;
-  viewerHasUpvoted: boolean;
-  viewerCanUpvote: boolean;
-  author: Author | null;
-  viewerDidAuthor: boolean;
-  createdAt: string;
-  url: string;
-  authorAssociation: string;
-  lastEditedAt: string | null;
-  deletedAt: string | null;
-  isMinimized: boolean;
-  bodyHTML: string;
-  reactionGroups: ReactionGroup[];
+  id: string
+  upvoteCount: number
+  viewerHasUpvoted: boolean
+  viewerCanUpvote: boolean
+  author: Author | null
+  viewerDidAuthor: boolean
+  createdAt: string
+  url: string
+  authorAssociation: string
+  lastEditedAt: string | null
+  deletedAt: string | null
+  isMinimized: boolean
+  bodyHTML: string
+  reactionGroups: ReactionGroup[]
   replies: {
-    totalCount: number;
-    pageInfo: PageInfo;
-    nodes: Reply[];
-  };
+    totalCount: number
+    pageInfo: PageInfo
+    nodes: Reply[]
+  }
 }
 
 export interface CreatedReply {
-  id: string;
-  author: Author | null;
-  viewerDidAuthor: boolean;
-  createdAt: string;
-  url: string;
-  authorAssociation: string;
-  lastEditedAt: string | null;
-  deletedAt: string | null;
-  isMinimized: boolean;
-  bodyHTML: string;
-  reactionGroups: ReactionGroup[];
-  replyTo: { id: string } | null;
+  id: string
+  author: Author | null
+  viewerDidAuthor: boolean
+  createdAt: string
+  url: string
+  authorAssociation: string
+  lastEditedAt: string | null
+  deletedAt: string | null
+  isMinimized: boolean
+  bodyHTML: string
+  reactionGroups: ReactionGroup[]
+  replyTo: { id: string } | null
 }
 
 export interface ToggleReactionResult {
   reaction: {
-    id: string;
-    content: ReactionContent;
-  } | null;
+    id: string
+    content: ReactionContent
+  } | null
 }
 
 export interface ToggleUpvoteResult {
   subject: {
-    upvoteCount: number;
-  };
+    upvoteCount: number
+  }
 }
 
 export interface RepliesResult {
-  totalCount: number;
-  pageInfo: PageInfo;
-  nodes: Reply[];
+  totalCount: number
+  pageInfo: PageInfo
+  nodes: Reply[]
 }

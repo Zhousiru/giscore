@@ -1,4 +1,3 @@
-import { useState, useEffect, useRef } from "react";
 import {
   Discussion,
   Comment,
@@ -10,7 +9,8 @@ import {
   type ReactionContent,
   type PageInfo,
   type Viewer,
-} from "@giscore/react";
+} from '@giscore/react'
+import { useGiscore } from '@giscore/react'
 import {
   useViewer,
   useInfiniteDiscussion,
@@ -19,17 +19,17 @@ import {
   useInfiniteReplies,
   useToggleReaction,
   useToggleUpvote,
-} from "@giscore/react/tanstack-query";
-import { useGiscore } from "@giscore/react";
+} from '@giscore/react/tanstack-query'
+import { useState, useEffect, useRef } from 'react'
 
 function ReactionBar({
   onToggle,
   onAdd,
 }: {
-  onToggle?: (content: ReactionContent, hasReacted: boolean) => void;
-  onAdd?: (content: ReactionContent) => void;
+  onToggle?: (content: ReactionContent, hasReacted: boolean) => void
+  onAdd?: (content: ReactionContent) => void
 }) {
-  const [showPicker, setShowPicker] = useState(false);
+  const [showPicker, setShowPicker] = useState(false)
 
   return (
     <div className="flex items-center gap-1">
@@ -37,11 +37,13 @@ function ReactionBar({
         {(reaction, index) => (
           <button
             key={index}
-            onClick={() => onToggle?.(reaction.content, reaction.viewerHasReacted)}
+            onClick={() =>
+              onToggle?.(reaction.content, reaction.viewerHasReacted)
+            }
             className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs transition-colors ${
               reaction.viewerHasReacted
-                ? "border-blue-300 bg-blue-50 text-blue-700"
-                : "border-gray-200 bg-gray-50 text-gray-600 hover:border-gray-300"
+                ? 'border-blue-300 bg-blue-50 text-blue-700'
+                : 'border-gray-200 bg-gray-50 text-gray-600 hover:border-gray-300'
             }`}
           >
             <span>{reaction.emoji}</span>
@@ -65,8 +67,8 @@ function ReactionBar({
                     <button
                       key={r.content}
                       onClick={() => {
-                        onAdd?.(r.content);
-                        setShowPicker(false);
+                        onAdd?.(r.content)
+                        setShowPicker(false)
                       }}
                       className="rounded p-1 text-base hover:bg-gray-100"
                     >
@@ -80,7 +82,7 @@ function ReactionBar({
         )}
       </div>
     </div>
-  );
+  )
 }
 
 function CommentItem({
@@ -91,22 +93,22 @@ function CommentItem({
   onReply,
   isAuthenticated,
 }: {
-  comment: CommentType;
-  discussionId: string;
+  comment: CommentType
+  discussionId: string
   onReaction?: (
     subjectId: string,
     content: ReactionContent,
-    hasReacted: boolean
-  ) => void;
-  onUpvote?: (subjectId: string, hasUpvoted: boolean) => void;
-  onReply?: (discussionId: string, commentId: string, body: string) => void;
-  isAuthenticated?: boolean;
+    hasReacted: boolean,
+  ) => void
+  onUpvote?: (subjectId: string, hasUpvoted: boolean) => void
+  onReply?: (discussionId: string, commentId: string, body: string) => void
+  isAuthenticated?: boolean
 }) {
-  const [showReplyForm, setShowReplyForm] = useState(false);
-  const [showAllReplies, setShowAllReplies] = useState(false);
-  const hasMoreReplies = comment.replies.pageInfo.hasNextPage;
-  const totalReplies = comment.replies.totalCount;
-  const visibleReplies = comment.replies.nodes;
+  const [showReplyForm, setShowReplyForm] = useState(false)
+  const [showAllReplies, setShowAllReplies] = useState(false)
+  const hasMoreReplies = comment.replies.pageInfo.hasNextPage
+  const totalReplies = comment.replies.totalCount
+  const visibleReplies = comment.replies.nodes
 
   return (
     <Comment.Root comment={comment}>
@@ -120,13 +122,13 @@ function CommentItem({
                   disabled={!canUpvote}
                   className={`flex flex-col items-center rounded p-1 transition-colors ${
                     hasUpvoted
-                      ? "text-blue-600"
-                      : "text-gray-400 hover:text-gray-600"
-                  } ${!canUpvote ? "cursor-not-allowed opacity-50" : ""}`}
+                      ? 'text-blue-600'
+                      : 'text-gray-400 hover:text-gray-600'
+                  } ${!canUpvote ? 'cursor-not-allowed opacity-50' : ''}`}
                 >
                   <svg
                     className="h-5 w-5"
-                    fill={hasUpvoted ? "currentColor" : "none"}
+                    fill={hasUpvoted ? 'currentColor' : 'none'}
                     stroke="currentColor"
                     viewBox="0 0 24 24"
                   >
@@ -174,8 +176,8 @@ function CommentItem({
           <div className="border-t border-gray-100 bg-gray-50/50 p-4 pl-12">
             <ReplyForm
               onSubmit={(body) => {
-                onReply?.(discussionId, comment.id, body);
-                setShowReplyForm(false);
+                onReply?.(discussionId, comment.id, body)
+                setShowReplyForm(false)
               }}
               onCancel={() => setShowReplyForm(false)}
             />
@@ -185,7 +187,11 @@ function CommentItem({
         {visibleReplies.length > 0 && (
           <>
             {visibleReplies.map((reply: ReplyType, index: number) => (
-              <ReplyItem key={reply.id || index} reply={reply} onReaction={onReaction} />
+              <ReplyItem
+                key={reply.id || index}
+                reply={reply}
+                onReaction={onReaction}
+              />
             ))}
           </>
         )}
@@ -207,19 +213,19 @@ function CommentItem({
         )}
       </div>
     </Comment.Root>
-  );
+  )
 }
 
 function ReplyItem({
   reply,
   onReaction,
 }: {
-  reply: ReplyType;
+  reply: ReplyType
   onReaction?: (
     subjectId: string,
     content: ReactionContent,
-    hasReacted: boolean
-  ) => void;
+    hasReacted: boolean,
+  ) => void
 }) {
   return (
     <Reply.Root reply={reply}>
@@ -244,25 +250,25 @@ function ReplyItem({
         </div>
       </div>
     </Reply.Root>
-  );
+  )
 }
 
 function ReplyForm({
   onSubmit,
   onCancel,
 }: {
-  onSubmit: (body: string) => void;
-  onCancel: () => void;
+  onSubmit: (body: string) => void
+  onCancel: () => void
 }) {
-  const [body, setBody] = useState("");
+  const [body, setBody] = useState('')
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+    e.preventDefault()
     if (body.trim()) {
-      onSubmit(body);
-      setBody("");
+      onSubmit(body)
+      setBody('')
     }
-  };
+  }
 
   return (
     <form onSubmit={handleSubmit}>
@@ -291,7 +297,7 @@ function ReplyForm({
         </button>
       </div>
     </form>
-  );
+  )
 }
 
 function LoadMoreReplies({
@@ -299,20 +305,20 @@ function LoadMoreReplies({
   loadedCount,
   onExpand,
 }: {
-  totalCount: number;
-  loadedCount: number;
-  onExpand: () => void;
+  totalCount: number
+  loadedCount: number
+  onExpand: () => void
 }) {
-  const remaining = totalCount - loadedCount;
+  const remaining = totalCount - loadedCount
 
   return (
     <button
       onClick={onExpand}
       className="w-full border-t border-gray-100 bg-gray-50/50 p-3 text-center text-sm text-blue-600 hover:bg-gray-100"
     >
-      View {remaining} more {remaining === 1 ? "reply" : "replies"}
+      View {remaining} more {remaining === 1 ? 'reply' : 'replies'}
     </button>
-  );
+  )
 }
 
 function ExpandedReplies({
@@ -320,32 +326,27 @@ function ExpandedReplies({
   initialReplies,
   onReaction,
 }: {
-  commentId: string;
-  initialReplies: ReplyType[];
+  commentId: string
+  initialReplies: ReplyType[]
   onReaction?: (
     subjectId: string,
     content: ReactionContent,
-    hasReacted: boolean
-  ) => void;
+    hasReacted: boolean,
+  ) => void
 }) {
-  const {
-    data,
-    isLoading,
-    hasNextPage,
-    isFetchingNextPage,
-    fetchNextPage,
-  } = useInfiniteReplies(commentId, 10);
+  const { data, isLoading, hasNextPage, isFetchingNextPage, fetchNextPage } =
+    useInfiniteReplies(commentId, 10)
 
-  const allReplies = data?.pages.flatMap((p) => p?.nodes ?? []) ?? [];
-  const initialIds = new Set(initialReplies.map((r) => r.id));
-  const newReplies = allReplies.filter((r) => !initialIds.has(r.id));
+  const allReplies = data?.pages.flatMap((p) => p?.nodes ?? []) ?? []
+  const initialIds = new Set(initialReplies.map((r) => r.id))
+  const newReplies = allReplies.filter((r) => !initialIds.has(r.id))
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center border-t border-gray-100 bg-gray-50/50 p-4">
         <div className="h-5 w-5 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
       </div>
-    );
+    )
   }
 
   return (
@@ -359,23 +360,23 @@ function ExpandedReplies({
           disabled={isFetchingNextPage}
           className="w-full border-t border-gray-100 bg-gray-50/50 p-3 text-center text-sm text-blue-600 hover:bg-gray-100 disabled:opacity-50"
         >
-          {isFetchingNextPage ? "Loading..." : "Load more replies"}
+          {isFetchingNextPage ? 'Loading...' : 'Load more replies'}
         </button>
       )}
     </>
-  );
+  )
 }
 
 function CommentForm({ onSubmit }: { onSubmit: (body: string) => void }) {
-  const [body, setBody] = useState("");
+  const [body, setBody] = useState('')
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+    e.preventDefault()
     if (body.trim()) {
-      onSubmit(body);
-      setBody("");
+      onSubmit(body)
+      setBody('')
     }
-  };
+  }
 
   return (
     <form onSubmit={handleSubmit} className="mt-4">
@@ -396,57 +397,57 @@ function CommentForm({ onSubmit }: { onSubmit: (body: string) => void }) {
         </button>
       </div>
     </form>
-  );
+  )
 }
 
 function useIntersectionObserver(
   onIntersect: () => void,
-  enabled: boolean
+  enabled: boolean,
 ): React.RefObject<HTMLDivElement | null> {
-  const ref = useRef<HTMLDivElement | null>(null);
+  const ref = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
-    if (!enabled) return;
+    if (!enabled) return
 
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0]?.isIntersecting) {
-          onIntersect();
+          onIntersect()
         }
       },
-      { threshold: 0.1 }
-    );
+      { threshold: 0.1 },
+    )
 
-    const el = ref.current;
-    if (el) observer.observe(el);
+    const el = ref.current
+    if (el) observer.observe(el)
 
     return () => {
-      if (el) observer.unobserve(el);
-    };
-  }, [onIntersect, enabled]);
+      if (el) observer.unobserve(el)
+    }
+  }, [onIntersect, enabled])
 
-  return ref;
+  return ref
 }
 
 interface InfiniteDiscussionViewProps {
-  discussion: DiscussionType;
-  comments: CommentType[];
-  pageInfo: PageInfo;
-  totalCount: number;
-  hasNextPage: boolean;
-  isFetchingNextPage: boolean;
-  onLoadMore: () => void;
+  discussion: DiscussionType
+  comments: CommentType[]
+  pageInfo: PageInfo
+  totalCount: number
+  hasNextPage: boolean
+  isFetchingNextPage: boolean
+  onLoadMore: () => void
   onReaction: (
     subjectId: string,
     content: ReactionContent,
-    hasReacted: boolean
-  ) => void;
-  onUpvote: (subjectId: string, hasUpvoted: boolean) => void;
-  onReply: (discussionId: string, commentId: string, body: string) => void;
-  onAddComment: (body: string) => void;
-  isAuthenticated?: boolean;
-  onLogin?: () => void;
-  viewer?: Viewer | null;
+    hasReacted: boolean,
+  ) => void
+  onUpvote: (subjectId: string, hasUpvoted: boolean) => void
+  onReply: (discussionId: string, commentId: string, body: string) => void
+  onAddComment: (body: string) => void
+  isAuthenticated?: boolean
+  onLogin?: () => void
+  viewer?: Viewer | null
 }
 
 function InfiniteDiscussionView({
@@ -466,8 +467,8 @@ function InfiniteDiscussionView({
 }: InfiniteDiscussionViewProps) {
   const loadMoreRef = useIntersectionObserver(
     onLoadMore,
-    hasNextPage && !isFetchingNextPage
-  );
+    hasNextPage && !isFetchingNextPage,
+  )
 
   return (
     <Discussion.Root discussion={discussion}>
@@ -545,12 +546,12 @@ function InfiniteDiscussionView({
         )}
       </div>
     </Discussion.Root>
-  );
+  )
 }
 
 function LiveInfiniteExample() {
-  const { config, isAuthenticated, login } = useGiscore();
-  const { data: viewer, refetch: refetchViewer } = useViewer();
+  const { config, isAuthenticated, login } = useGiscore()
+  const { data: viewer, refetch: refetchViewer } = useViewer()
   const {
     data,
     isLoading,
@@ -559,85 +560,89 @@ function LiveInfiniteExample() {
     isFetchingNextPage,
     fetchNextPage,
     refetch,
-  } = useInfiniteDiscussion(1, 10);
+  } = useInfiniteDiscussion(1, 10)
 
   useEffect(() => {
     if (isAuthenticated) {
-      refetchViewer();
+      refetchViewer()
     }
-  }, [isAuthenticated, refetchViewer]);
+  }, [isAuthenticated, refetchViewer])
 
-  const toggleReaction = useToggleReaction();
-  const toggleUpvote = useToggleUpvote();
+  const toggleReaction = useToggleReaction()
+  const toggleUpvote = useToggleUpvote()
   const addComment = useAddComment({
     onSuccess: () => {
-      refetch();
+      refetch()
     },
-  });
+  })
   const addReply = useAddReply({
     onSuccess: () => {
-      refetch();
+      refetch()
     },
-  });
+  })
 
   const handleReaction = (
     subjectId: string,
     content: ReactionContent,
-    hasReacted: boolean
+    hasReacted: boolean,
   ) => {
     if (!isAuthenticated) {
-      login();
-      return;
+      login()
+      return
     }
-    toggleReaction.mutate({ subjectId, content, hasReacted });
-  };
+    toggleReaction.mutate({ subjectId, content, hasReacted })
+  }
 
   const handleUpvote = (subjectId: string, hasUpvoted: boolean) => {
     if (!isAuthenticated) {
-      login();
-      return;
+      login()
+      return
     }
-    toggleUpvote.mutate({ subjectId, hasUpvoted });
-  };
+    toggleUpvote.mutate({ subjectId, hasUpvoted })
+  }
 
-  const handleReply = (discussionId: string, commentId: string, body: string) => {
+  const handleReply = (
+    discussionId: string,
+    commentId: string,
+    body: string,
+  ) => {
     if (!isAuthenticated) {
-      login();
-      return;
+      login()
+      return
     }
-    addReply.mutate({ discussionId, replyToId: commentId, body });
-  };
+    addReply.mutate({ discussionId, replyToId: commentId, body })
+  }
 
   const handleAddComment = (body: string) => {
-    const firstPage = data?.pages[0] ?? null;
-    if (!firstPage) return;
-    addComment.mutate({ discussionId: firstPage.id, body });
-  };
+    const firstPage = data?.pages[0] ?? null
+    if (!firstPage) return
+    addComment.mutate({ discussionId: firstPage.id, body })
+  }
 
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent" />
       </div>
-    );
+    )
   }
 
-  if (error && !error.message.includes("not found")) {
+  if (error && !error.message.includes('not found')) {
     return (
       <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-700">
         Error loading discussion: {error.message}
       </div>
-    );
+    )
   }
 
-  const firstPage = data?.pages[0];
+  const firstPage = data?.pages[0]
 
   if (!firstPage) {
     return (
       <div className="space-y-6">
         <div className="rounded-lg border border-gray-200 bg-white p-6">
           <h2 className="text-xl font-bold text-gray-900">
-            {config.term || "Discussion"}
+            {config.term || 'Discussion'}
           </h2>
           <p className="mt-2 text-gray-600">
             No discussion yet. Be the first to comment!
@@ -656,11 +661,11 @@ function LiveInfiniteExample() {
           </button>
         )}
       </div>
-    );
+    )
   }
 
-  const allComments = data.pages.flatMap((p) => p?.comments.nodes ?? []);
-  const lastPage = data.pages[data.pages.length - 1];
+  const allComments = data.pages.flatMap((p) => p?.comments.nodes ?? [])
+  const lastPage = data.pages[data.pages.length - 1]
 
   return (
     <>
@@ -689,18 +694,18 @@ function LiveInfiniteExample() {
         </div>
       )}
     </>
-  );
+  )
 }
 
 function UserMenu() {
-  const { isAuthenticated, isLoading, login, logout } = useGiscore();
-  const { data: viewer, refetch: refetchViewer } = useViewer();
+  const { isAuthenticated, isLoading, login, logout } = useGiscore()
+  const { data: viewer, refetch: refetchViewer } = useViewer()
 
   useEffect(() => {
     if (isAuthenticated) {
-      refetchViewer();
+      refetchViewer()
     }
-  }, [isAuthenticated, refetchViewer]);
+  }, [isAuthenticated, refetchViewer])
 
   if (isLoading) {
     return (
@@ -708,7 +713,7 @@ function UserMenu() {
         <div className="h-5 w-5 animate-spin rounded-full border-2 border-gray-400 border-t-transparent" />
         <span className="text-sm text-gray-500">Signing in...</span>
       </div>
-    );
+    )
   }
 
   if (!isAuthenticated) {
@@ -719,7 +724,7 @@ function UserMenu() {
       >
         Sign in with GitHub
       </button>
-    );
+    )
   }
 
   return (
@@ -741,7 +746,7 @@ function UserMenu() {
         Sign out
       </button>
     </div>
-  );
+  )
 }
 
 export default function App() {
@@ -756,5 +761,5 @@ export default function App() {
         <LiveInfiniteExample />
       </div>
     </div>
-  );
+  )
 }

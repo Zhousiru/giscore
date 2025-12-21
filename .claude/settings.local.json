@@ -19,7 +19,8 @@
       "Bash(pnpm --filter @giscore/example typecheck)",
       "Bash(cat:*)",
       "Bash(pnpm:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(findstr:*)"
     ]
   }
 }

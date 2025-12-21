@@ -2,13 +2,13 @@ const AUTHOR_FIELDS = `
   avatarUrl
   login
   url
-`;
+`
 
 const REACTION_GROUPS_FIELDS = `
   content
   users { totalCount }
   viewerHasReacted
-`;
+`
 
 const REPLY_FIELDS = `
   id
@@ -23,7 +23,7 @@ const REPLY_FIELDS = `
   bodyHTML
   reactionGroups { ${REACTION_GROUPS_FIELDS} }
   replyTo { id }
-`;
+`
 
 const COMMENT_FIELDS = `
   id
@@ -40,7 +40,7 @@ const COMMENT_FIELDS = `
   isMinimized
   bodyHTML
   reactionGroups { ${REACTION_GROUPS_FIELDS} }
-`;
+`
 
 const COMMENT_WITH_REPLIES_FIELDS = (replyFirst: number) => `
   ${COMMENT_FIELDS}
@@ -54,7 +54,7 @@ const COMMENT_WITH_REPLIES_FIELDS = (replyFirst: number) => `
     }
     nodes { ${REPLY_FIELDS} }
   }
-`;
+`
 
 const DISCUSSION_FIELDS = `
   id
@@ -69,7 +69,7 @@ const DISCUSSION_FIELDS = `
   category { id name slug }
   reactions { totalCount }
   reactionGroups { ${REACTION_GROUPS_FIELDS} }
-`;
+`
 
 export const GET_DISCUSSION = (replyFirst = 3) => `
   query GetDiscussion(
@@ -97,7 +97,7 @@ export const GET_DISCUSSION = (replyFirst = 3) => `
       }
     }
   }
-`;
+`
 
 export const GET_COMMENT_REPLIES = `
   query GetCommentReplies(
@@ -122,7 +122,7 @@ export const GET_COMMENT_REPLIES = `
       }
     }
   }
-`;
+`
 
 export const SEARCH_DISCUSSIONS = `
   query SearchDiscussions(
@@ -157,7 +157,7 @@ export const SEARCH_DISCUSSIONS = `
       }
     }
   }
-`;
+`
 
 export const GET_REPOSITORY = `
   query GetRepository($owner: String!, $repo: String!) {
@@ -168,7 +168,7 @@ export const GET_REPOSITORY = `
       }
     }
   }
-`;
+`
 
 export const CREATE_DISCUSSION = `
   mutation CreateDiscussion(
@@ -186,7 +186,7 @@ export const CREATE_DISCUSSION = `
       discussion { id number url }
     }
   }
-`;
+`
 
 export const ADD_DISCUSSION_COMMENT = `
   mutation AddDiscussionComment($discussionId: ID!, $body: String!) {
@@ -194,7 +194,7 @@ export const ADD_DISCUSSION_COMMENT = `
       comment { ${COMMENT_WITH_REPLIES_FIELDS(3)} }
     }
   }
-`;
+`
 
 export const ADD_DISCUSSION_REPLY = `
   mutation AddDiscussionReply($discussionId: ID!, $replyToId: ID!, $body: String!) {
@@ -219,7 +219,7 @@ export const ADD_DISCUSSION_REPLY = `
       }
     }
   }
-`;
+`
 
 export const ADD_REACTION = `
   mutation AddReaction($subjectId: ID!, $content: ReactionContent!) {
@@ -227,7 +227,7 @@ export const ADD_REACTION = `
       reaction { id content }
     }
   }
-`;
+`
 
 export const REMOVE_REACTION = `
   mutation RemoveReaction($subjectId: ID!, $content: ReactionContent!) {
@@ -235,7 +235,7 @@ export const REMOVE_REACTION = `
       reaction { id content }
     }
   }
-`;
+`
 
 export const ADD_UPVOTE = `
   mutation AddUpvote($subjectId: ID!) {
@@ -243,7 +243,7 @@ export const ADD_UPVOTE = `
       subject { upvoteCount }
     }
   }
-`;
+`
 
 export const REMOVE_UPVOTE = `
   mutation RemoveUpvote($subjectId: ID!) {
@@ -251,4 +251,4 @@ export const REMOVE_UPVOTE = `
       subject { upvoteCount }
     }
   }
-`;
+`

@@ -1,2 +1,2 @@
-export const IS_DEV = process.env.NODE_ENV !== "production";
-export const RUNTIME = process.env.RUNTIME;
+export const IS_DEV = process.env.NODE_ENV !== 'production'
+export const RUNTIME = process.env.RUNTIME

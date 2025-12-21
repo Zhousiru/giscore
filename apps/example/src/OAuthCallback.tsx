@@ -1,25 +1,25 @@
-import { useEffect } from "react";
-import { parseCallbackParams } from "@giscore/core";
+import { parseCallbackParams } from '@giscore/core'
+import { useEffect } from 'react'
 
 export function OAuthCallback() {
   useEffect(() => {
-    const { error } = parseCallbackParams();
+    const { error } = parseCallbackParams()
 
     // Send message to opener (parent window)
     if (window.opener) {
       window.opener.postMessage(
         {
-          type: "giscore-oauth-callback",
+          type: 'giscore-oauth-callback',
           error,
         },
-        window.location.origin
-      );
-      window.close();
+        window.location.origin,
+      )
+      window.close()
     } else {
       // If no opener (direct navigation), redirect to home
-      window.location.href = "/";
+      window.location.href = '/'
     }
-  }, []);
+  }, [])
 
   return (
     <div className="flex min-h-screen items-center justify-center">
@@ -28,5 +28,5 @@ export function OAuthCallback() {
         <p className="text-gray-600">Completing sign in...</p>
       </div>
     </div>
-  );
+  )
 }

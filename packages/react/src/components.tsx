@@ -1,40 +1,40 @@
-import {
-  createContext,
-  useContext,
-  type ReactNode,
-  type ComponentPropsWithoutRef,
-  type ElementType,
-} from "react";
 import type {
   Discussion as DiscussionData,
   Comment as CommentData,
   Reply as ReplyData,
   ReactionGroup,
   ReactionContent,
-} from "@giscore/core";
+} from '@giscore/core'
+import {
+  createContext,
+  useContext,
+  type ReactNode,
+  type ComponentPropsWithoutRef,
+  type ElementType,
+} from 'react'
 
 type PolymorphicProps<E extends ElementType, P = object> = P &
   Omit<ComponentPropsWithoutRef<E>, keyof P> & {
-    as?: E;
-  };
+    as?: E
+  }
 
 // Discussion Context
 interface DiscussionContextValue {
-  discussion: DiscussionData;
+  discussion: DiscussionData
 }
 
-const DiscussionContext = createContext<DiscussionContextValue | null>(null);
+const DiscussionContext = createContext<DiscussionContextValue | null>(null)
 
 function useDiscussionContext() {
-  const ctx = useContext(DiscussionContext);
-  if (!ctx) throw new Error("Must be used within Discussion.Root");
-  return ctx;
+  const ctx = useContext(DiscussionContext)
+  if (!ctx) throw new Error('Must be used within Discussion.Root')
+  return ctx
 }
 
 // Discussion Components
 interface DiscussionRootProps {
-  discussion: DiscussionData;
-  children: ReactNode;
+  discussion: DiscussionData
+  children: ReactNode
 }
 
 function DiscussionRoot({ discussion, children }: DiscussionRootProps) {
@@ -42,59 +42,62 @@ function DiscussionRoot({ discussion, children }: DiscussionRootProps) {
     <DiscussionContext.Provider value={{ discussion }}>
       {children}
     </DiscussionContext.Provider>
-  );
+  )
 }
 
-function DiscussionTitle<E extends ElementType = "h2">({
+function DiscussionTitle<E extends ElementType = 'h2'>({
   as,
   ...props
 }: PolymorphicProps<E>) {
-  const { discussion } = useDiscussionContext();
-  const Component = as || "h2";
-  return <Component {...props}>{discussion.title}</Component>;
+  const { discussion } = useDiscussionContext()
+  const Component = as || 'h2'
+  return <Component {...props}>{discussion.title}</Component>
 }
 
-function DiscussionBody<E extends ElementType = "div">({
+function DiscussionBody<E extends ElementType = 'div'>({
   as,
   ...props
 }: PolymorphicProps<E>) {
-  const { discussion } = useDiscussionContext();
-  const Component = as || "div";
+  const { discussion } = useDiscussionContext()
+  const Component = as || 'div'
   return (
     <Component
       {...props}
       dangerouslySetInnerHTML={{ __html: discussion.bodyHTML }}
     />
-  );
+  )
 }
 
 interface DiscussionCommentsProps {
-  children: (comment: CommentData, index: number) => ReactNode;
+  children: (comment: CommentData, index: number) => ReactNode
 }
 
 function DiscussionComments({ children }: DiscussionCommentsProps) {
-  const { discussion } = useDiscussionContext();
-  return <>{discussion.comments.nodes.map(children)}</>;
+  const { discussion } = useDiscussionContext()
+  return <>{discussion.comments.nodes.map(children)}</>
 }
 
-function DiscussionCommentCount<E extends ElementType = "span">({
+function DiscussionCommentCount<E extends ElementType = 'span'>({
   as,
   ...props
 }: PolymorphicProps<E>) {
-  const { discussion } = useDiscussionContext();
-  const Component = as || "span";
-  return <Component {...props}>{discussion.comments.totalCount}</Component>;
+  const { discussion } = useDiscussionContext()
+  const Component = as || 'span'
+  return <Component {...props}>{discussion.comments.totalCount}</Component>
 }
 
 function DiscussionReactions({ children }: { children: ReactNode }) {
-  const { discussion } = useDiscussionContext();
+  const { discussion } = useDiscussionContext()
   return (
     <ReactionGroupContext.Provider
-      value={{ reactionGroups: discussion.reactionGroups, subjectId: discussion.id }}
+      value={{
+        reactionGroups: discussion.reactionGroups,
+        subjectId: discussion.id,
+      }}
     >
       {children}
     </ReactionGroupContext.Provider>
-  );
+  )
 }
 
 export const Discussion = {
@@ -104,25 +107,25 @@ export const Discussion = {
   Comments: DiscussionComments,
   CommentCount: DiscussionCommentCount,
   Reactions: DiscussionReactions,
-};
+}
 
 // Comment Context
 interface CommentContextValue {
-  comment: CommentData;
+  comment: CommentData
 }
 
-const CommentContext = createContext<CommentContextValue | null>(null);
+const CommentContext = createContext<CommentContextValue | null>(null)
 
 function useCommentContext() {
-  const ctx = useContext(CommentContext);
-  if (!ctx) throw new Error("Must be used within Comment.Root");
-  return ctx;
+  const ctx = useContext(CommentContext)
+  if (!ctx) throw new Error('Must be used within Comment.Root')
+  return ctx
 }
 
 // Comment Components
 interface CommentRootProps {
-  comment: CommentData;
-  children: ReactNode;
+  comment: CommentData
+  children: ReactNode
 }
 
 function CommentRoot({ comment, children }: CommentRootProps) {
@@ -130,99 +133,99 @@ function CommentRoot({ comment, children }: CommentRootProps) {
     <CommentContext.Provider value={{ comment }}>
       {children}
     </CommentContext.Provider>
-  );
+  )
 }
 
-function CommentAuthor<E extends ElementType = "span">({
+function CommentAuthor<E extends ElementType = 'span'>({
   as,
   ...props
 }: PolymorphicProps<E>) {
-  const { comment } = useCommentContext();
-  const Component = as || "span";
-  return <Component {...props}>{comment.author?.login ?? "Ghost"}</Component>;
+  const { comment } = useCommentContext()
+  const Component = as || 'span'
+  return <Component {...props}>{comment.author?.login ?? 'Ghost'}</Component>
 }
 
-function CommentAvatar<E extends ElementType = "img">({
+function CommentAvatar<E extends ElementType = 'img'>({
   as,
   ...props
 }: PolymorphicProps<E, { alt?: string }>) {
-  const { comment } = useCommentContext();
-  const Component = as || "img";
+  const { comment } = useCommentContext()
+  const Component = as || 'img'
   return (
     <Component
       src={comment.author?.avatarUrl}
-      alt={props.alt ?? comment.author?.login ?? "Avatar"}
+      alt={props.alt ?? comment.author?.login ?? 'Avatar'}
       {...props}
     />
-  );
+  )
 }
 
-function CommentBody<E extends ElementType = "div">({
+function CommentBody<E extends ElementType = 'div'>({
   as,
   ...props
 }: PolymorphicProps<E>) {
-  const { comment } = useCommentContext();
-  const Component = as || "div";
+  const { comment } = useCommentContext()
+  const Component = as || 'div'
   return (
     <Component
       {...props}
       dangerouslySetInnerHTML={{ __html: comment.bodyHTML }}
     />
-  );
+  )
 }
 
-function CommentTime<E extends ElementType = "time">({
+function CommentTime<E extends ElementType = 'time'>({
   as,
   ...props
 }: PolymorphicProps<E>) {
-  const { comment } = useCommentContext();
-  const Component = as || "time";
+  const { comment } = useCommentContext()
+  const Component = as || 'time'
   return (
     <Component dateTime={comment.createdAt} {...props}>
       {new Date(comment.createdAt).toLocaleDateString()}
     </Component>
-  );
+  )
 }
 
 interface CommentRepliesProps {
-  children: (reply: ReplyData, index: number) => ReactNode;
+  children: (reply: ReplyData, index: number) => ReactNode
 }
 
 function CommentReplies({ children }: CommentRepliesProps) {
-  const { comment } = useCommentContext();
-  return <>{comment.replies.nodes.map(children)}</>;
+  const { comment } = useCommentContext()
+  return <>{comment.replies.nodes.map(children)}</>
 }
 
-function CommentReplyCount<E extends ElementType = "span">({
+function CommentReplyCount<E extends ElementType = 'span'>({
   as,
   ...props
 }: PolymorphicProps<E>) {
-  const { comment } = useCommentContext();
-  const Component = as || "span";
-  return <Component {...props}>{comment.replies.totalCount}</Component>;
+  const { comment } = useCommentContext()
+  const Component = as || 'span'
+  return <Component {...props}>{comment.replies.totalCount}</Component>
 }
 
 function CommentReactions({ children }: { children: ReactNode }) {
-  const { comment } = useCommentContext();
+  const { comment } = useCommentContext()
   return (
     <ReactionGroupContext.Provider
       value={{ reactionGroups: comment.reactionGroups, subjectId: comment.id }}
     >
       {children}
     </ReactionGroupContext.Provider>
-  );
+  )
 }
 
 interface CommentUpvoteProps {
   children: (props: {
-    count: number;
-    hasUpvoted: boolean;
-    canUpvote: boolean;
-  }) => ReactNode;
+    count: number
+    hasUpvoted: boolean
+    canUpvote: boolean
+  }) => ReactNode
 }
 
 function CommentUpvote({ children }: CommentUpvoteProps) {
-  const { comment } = useCommentContext();
+  const { comment } = useCommentContext()
   return (
     <>
       {children({
@@ -231,7 +234,7 @@ function CommentUpvote({ children }: CommentUpvoteProps) {
         canUpvote: comment.viewerCanUpvote,
       })}
     </>
-  );
+  )
 }
 
 export const Comment = {
@@ -244,93 +247,93 @@ export const Comment = {
   ReplyCount: CommentReplyCount,
   Reactions: CommentReactions,
   Upvote: CommentUpvote,
-};
+}
 
 // Reply Context
 interface ReplyContextValue {
-  reply: ReplyData;
+  reply: ReplyData
 }
 
-const ReplyContext = createContext<ReplyContextValue | null>(null);
+const ReplyContext = createContext<ReplyContextValue | null>(null)
 
 function useReplyContext() {
-  const ctx = useContext(ReplyContext);
-  if (!ctx) throw new Error("Must be used within Reply.Root");
-  return ctx;
+  const ctx = useContext(ReplyContext)
+  if (!ctx) throw new Error('Must be used within Reply.Root')
+  return ctx
 }
 
 // Reply Components
 interface ReplyRootProps {
-  reply: ReplyData;
-  children: ReactNode;
+  reply: ReplyData
+  children: ReactNode
 }
 
 function ReplyRoot({ reply, children }: ReplyRootProps) {
   return (
     <ReplyContext.Provider value={{ reply }}>{children}</ReplyContext.Provider>
-  );
+  )
 }
 
-function ReplyAuthor<E extends ElementType = "span">({
+function ReplyAuthor<E extends ElementType = 'span'>({
   as,
   ...props
 }: PolymorphicProps<E>) {
-  const { reply } = useReplyContext();
-  const Component = as || "span";
-  return <Component {...props}>{reply.author?.login ?? "Ghost"}</Component>;
+  const { reply } = useReplyContext()
+  const Component = as || 'span'
+  return <Component {...props}>{reply.author?.login ?? 'Ghost'}</Component>
 }
 
-function ReplyAvatar<E extends ElementType = "img">({
+function ReplyAvatar<E extends ElementType = 'img'>({
   as,
   ...props
 }: PolymorphicProps<E, { alt?: string }>) {
-  const { reply } = useReplyContext();
-  const Component = as || "img";
+  const { reply } = useReplyContext()
+  const Component = as || 'img'
   return (
     <Component
       src={reply.author?.avatarUrl}
-      alt={props.alt ?? reply.author?.login ?? "Avatar"}
+      alt={props.alt ?? reply.author?.login ?? 'Avatar'}
       {...props}
     />
-  );
+  )
 }
 
-function ReplyBody<E extends ElementType = "div">({
+function ReplyBody<E extends ElementType = 'div'>({
   as,
   ...props
 }: PolymorphicProps<E>) {
-  const { reply } = useReplyContext();
-  const Component = as || "div";
+  const { reply } = useReplyContext()
+  const Component = as || 'div'
   return (
     <Component
       {...props}
       dangerouslySetInnerHTML={{ __html: reply.bodyHTML }}
     />
-  );
+  )
 }
 
-function ReplyTime<E extends ElementType = "time">({
+function ReplyTime<E extends ElementType = 'time'>({
   as,
   ...props
 }: PolymorphicProps<E>) {
-  const { reply } = useReplyContext();
-  const Component = as || "time";
+  const { reply } = useReplyContext()
+  const Component = as || 'time'
   return (
     <Component dateTime={reply.createdAt} {...props}>
       {new Date(reply.createdAt).toLocaleDateString()}
     </Component>
-  );
+  )
 }
 
 function ReplyReactions({ children }: { children: ReactNode }) {
-  const { reply } = useReplyContext();
+  const { reply } = useReplyContext()
   return (
     <ReactionGroupContext.Provider
       value={{ reactionGroups: reply.reactionGroups, subjectId: reply.id }}
     >
       {children}
     </ReactionGroupContext.Provider>
-  );
+  )
 }
 
 export const ReplyComponent = {
@@ -340,67 +343,67 @@ export const ReplyComponent = {
   Body: ReplyBody,
   Time: ReplyTime,
   Reactions: ReplyReactions,
-};
+}
 
 // Reaction Context
 interface ReactionGroupContextValue {
-  reactionGroups: ReactionGroup[];
-  subjectId: string;
+  reactionGroups: ReactionGroup[]
+  subjectId: string
 }
 
-const ReactionGroupContext = createContext<ReactionGroupContextValue | null>(null);
+const ReactionGroupContext = createContext<ReactionGroupContextValue | null>(
+  null,
+)
 
 function useReactionGroupContext() {
-  const ctx = useContext(ReactionGroupContext);
-  if (!ctx) throw new Error("Must be used within a Reactions component");
-  return ctx;
+  const ctx = useContext(ReactionGroupContext)
+  if (!ctx) throw new Error('Must be used within a Reactions component')
+  return ctx
 }
 
 // Reaction Components
 const REACTION_EMOJI: Record<ReactionContent, string> = {
-  THUMBS_UP: "👍",
-  THUMBS_DOWN: "👎",
-  LAUGH: "😄",
-  HOORAY: "🎉",
-  CONFUSED: "😕",
-  HEART: "❤️",
-  ROCKET: "🚀",
-  EYES: "👀",
-};
+  THUMBS_UP: '👍',
+  THUMBS_DOWN: '👎',
+  LAUGH: '😄',
+  HOORAY: '🎉',
+  CONFUSED: '😕',
+  HEART: '❤️',
+  ROCKET: '🚀',
+  EYES: '👀',
+}
 
 interface ReactionListProps {
   children: (
     reaction: ReactionGroup & { emoji: string },
-    index: number
-  ) => ReactNode;
+    index: number,
+  ) => ReactNode
 }
 
 function ReactionList({ children }: ReactionListProps) {
-  const { reactionGroups } = useReactionGroupContext();
+  const { reactionGroups } = useReactionGroupContext()
   return (
     <>
       {reactionGroups
         .filter((r) => r.users.totalCount > 0)
-        .map((r, i) =>
-          children({ ...r, emoji: REACTION_EMOJI[r.content] }, i)
-        )}
+        .map((r, i) => children({ ...r, emoji: REACTION_EMOJI[r.content] }, i))}
     </>
-  );
+  )
 }
 
 interface ReactionButtonProps {
-  content: ReactionContent;
+  content: ReactionContent
   children: (props: {
-    emoji: string;
-    count: number;
-    hasReacted: boolean;
-    content: ReactionContent;
-  }) => ReactNode;
+    emoji: string
+    count: number
+    hasReacted: boolean
+    content: ReactionContent
+  }) => ReactNode
 }
 
 function ReactionButton({ content, children }: ReactionButtonProps) {
-  const { reactionGroups } = useReactionGroupContext();
-  const group = reactionGroups.find((r) => r.content === content);
+  const { reactionGroups } = useReactionGroupContext()
+  const group = reactionGroups.find((r) => r.content === content)
 
   return (
     <>
@@ -411,13 +414,13 @@ function ReactionButton({ content, children }: ReactionButtonProps) {
         content,
       })}
     </>
-  );
+  )
 }
 
 interface ReactionPickerProps {
   children: (
-    reactions: Array<{ content: ReactionContent; emoji: string }>
-  ) => ReactNode;
+    reactions: Array<{ content: ReactionContent; emoji: string }>,
+  ) => ReactNode
 }
 
 function ReactionPicker({ children }: ReactionPickerProps) {
@@ -425,9 +428,9 @@ function ReactionPicker({ children }: ReactionPickerProps) {
     (content) => ({
       content,
       emoji: REACTION_EMOJI[content],
-    })
-  );
-  return <>{children(reactions)}</>;
+    }),
+  )
+  return <>{children(reactions)}</>
 }
 
 export const Reactions = {
@@ -435,7 +438,7 @@ export const Reactions = {
   Button: ReactionButton,
   Picker: ReactionPicker,
   EMOJI: REACTION_EMOJI,
-};
+}
 
 // Re-export context hooks for advanced usage
 export {
@@ -443,4 +446,4 @@ export {
   useCommentContext,
   useReplyContext,
   useReactionGroupContext,
-};
+}

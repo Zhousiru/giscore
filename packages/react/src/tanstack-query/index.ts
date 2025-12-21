@@ -11,4 +11,4 @@ export {
   useAddReply,
   useToggleReaction,
   useToggleUpvote,
-} from "./hooks";
+} from './hooks'

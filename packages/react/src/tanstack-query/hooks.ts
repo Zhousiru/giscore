@@ -1,11 +1,4 @@
-import {
-  useQuery,
-  useInfiniteQuery,
-  useMutation,
-  useQueryClient,
-  type UseQueryOptions,
-  type UseMutationOptions,
-} from "@tanstack/react-query";
+import { useGiscore } from '../context'
 import type {
   Discussion,
   DiscussionSearchResult,
@@ -16,57 +9,64 @@ import type {
   ToggleUpvoteResult,
   Viewer,
   RepliesResult,
-} from "@giscore/core";
-import { useGiscore } from "../context";
+} from '@giscore/core'
+import {
+  useQuery,
+  useInfiniteQuery,
+  useMutation,
+  useQueryClient,
+  type UseQueryOptions,
+  type UseMutationOptions,
+} from '@tanstack/react-query'
 
 export const giscoreKeys = {
-  all: ["giscore"] as const,
-  viewer: () => [...giscoreKeys.all, "viewer"] as const,
-  discussions: () => [...giscoreKeys.all, "discussion"] as const,
+  all: ['giscore'] as const,
+  viewer: () => [...giscoreKeys.all, 'viewer'] as const,
+  discussions: () => [...giscoreKeys.all, 'discussion'] as const,
   discussion: (number: number) =>
     [...giscoreKeys.discussions(), number] as const,
   discussionInfinite: (number: number) =>
-    [...giscoreKeys.discussions(), number, "infinite"] as const,
+    [...giscoreKeys.discussions(), number, 'infinite'] as const,
   search: (term: string) =>
-    [...giscoreKeys.discussions(), "search", term] as const,
+    [...giscoreKeys.discussions(), 'search', term] as const,
   searchInfinite: (term: string) =>
-    [...giscoreKeys.discussions(), "search", term, "infinite"] as const,
+    [...giscoreKeys.discussions(), 'search', term, 'infinite'] as const,
   replies: (commentId: string) =>
-    [...giscoreKeys.all, "replies", commentId] as const,
+    [...giscoreKeys.all, 'replies', commentId] as const,
   repliesInfinite: (commentId: string) =>
-    [...giscoreKeys.all, "replies", commentId, "infinite"] as const,
-};
+    [...giscoreKeys.all, 'replies', commentId, 'infinite'] as const,
+}
 
 export function useViewer(
-  options?: Omit<UseQueryOptions<Viewer | null>, "queryKey" | "queryFn">
+  options?: Omit<UseQueryOptions<Viewer | null>, 'queryKey' | 'queryFn'>,
 ) {
-  const { client } = useGiscore();
+  const { client } = useGiscore()
 
   return useQuery({
     queryKey: giscoreKeys.viewer(),
     queryFn: async () => {
-      if (!client.isAuthenticated) return null;
-      return client.getViewer();
+      if (!client.isAuthenticated) return null
+      return client.getViewer()
     },
     ...options,
-  });
+  })
 }
 
 export function useDiscussion(
   number: number,
-  options?: Omit<UseQueryOptions<Discussion | null>, "queryKey" | "queryFn">
+  options?: Omit<UseQueryOptions<Discussion | null>, 'queryKey' | 'queryFn'>,
 ) {
-  const { client } = useGiscore();
+  const { client } = useGiscore()
 
   return useQuery({
     queryKey: giscoreKeys.discussion(number),
     queryFn: () => client.getDiscussion(number),
     ...options,
-  });
+  })
 }
 
 export function useInfiniteDiscussion(number: number, pageSize = 10) {
-  const { client } = useGiscore();
+  const { client } = useGiscore()
 
   return useInfiniteQuery({
     queryKey: giscoreKeys.discussionInfinite(number),
@@ -78,34 +78,34 @@ export function useInfiniteDiscussion(number: number, pageSize = 10) {
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage) =>
       lastPage?.comments.pageInfo.hasNextPage
-        ? lastPage.comments.pageInfo.endCursor ?? undefined
+        ? (lastPage.comments.pageInfo.endCursor ?? undefined)
         : undefined,
     getPreviousPageParam: (firstPage) =>
       firstPage?.comments.pageInfo.hasPreviousPage
-        ? firstPage.comments.pageInfo.startCursor ?? undefined
+        ? (firstPage.comments.pageInfo.startCursor ?? undefined)
         : undefined,
-  });
+  })
 }
 
 export function useSearchDiscussions(
   term: string,
   options?: Omit<
     UseQueryOptions<DiscussionSearchResult | null>,
-    "queryKey" | "queryFn"
-  >
+    'queryKey' | 'queryFn'
+  >,
 ) {
-  const { client } = useGiscore();
+  const { client } = useGiscore()
 
   return useQuery({
     queryKey: giscoreKeys.search(term),
     queryFn: () => client.searchDiscussions(term),
     enabled: !!term,
     ...options,
-  });
+  })
 }
 
 export function useInfiniteSearchDiscussions(term: string, pageSize = 10) {
-  const { client } = useGiscore();
+  const { client } = useGiscore()
 
   return useInfiniteQuery({
     queryKey: giscoreKeys.searchInfinite(term),
@@ -117,32 +117,32 @@ export function useInfiniteSearchDiscussions(term: string, pageSize = 10) {
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage) =>
       lastPage?.pageInfo.hasNextPage
-        ? lastPage.pageInfo.endCursor ?? undefined
+        ? (lastPage.pageInfo.endCursor ?? undefined)
         : undefined,
     getPreviousPageParam: (firstPage) =>
       firstPage?.pageInfo.hasPreviousPage
-        ? firstPage.pageInfo.startCursor ?? undefined
+        ? (firstPage.pageInfo.startCursor ?? undefined)
         : undefined,
     enabled: !!term,
-  });
+  })
 }
 
 export function useReplies(
   commentId: string,
-  options?: Omit<UseQueryOptions<RepliesResult | null>, "queryKey" | "queryFn">
+  options?: Omit<UseQueryOptions<RepliesResult | null>, 'queryKey' | 'queryFn'>,
 ) {
-  const { client } = useGiscore();
+  const { client } = useGiscore()
 
   return useQuery({
     queryKey: giscoreKeys.replies(commentId),
     queryFn: () => client.getReplies(commentId),
     enabled: !!commentId,
     ...options,
-  });
+  })
 }
 
 export function useInfiniteReplies(commentId: string, pageSize = 10) {
-  const { client } = useGiscore();
+  const { client } = useGiscore()
 
   return useInfiniteQuery({
     queryKey: giscoreKeys.repliesInfinite(commentId),
@@ -154,110 +154,110 @@ export function useInfiniteReplies(commentId: string, pageSize = 10) {
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (lastPage) =>
       lastPage?.pageInfo.hasNextPage
-        ? lastPage.pageInfo.endCursor ?? undefined
+        ? (lastPage.pageInfo.endCursor ?? undefined)
         : undefined,
     getPreviousPageParam: (firstPage) =>
       firstPage?.pageInfo.hasPreviousPage
-        ? firstPage.pageInfo.startCursor ?? undefined
+        ? (firstPage.pageInfo.startCursor ?? undefined)
         : undefined,
     enabled: !!commentId,
-  });
+  })
 }
 
 interface AddCommentVariables {
-  discussionId: string;
-  body: string;
+  discussionId: string
+  body: string
 }
 
 export function useAddComment(
   options?: Omit<
     UseMutationOptions<CreatedComment, Error, AddCommentVariables>,
-    "mutationFn"
-  >
+    'mutationFn'
+  >,
 ) {
-  const { client } = useGiscore();
-  const queryClient = useQueryClient();
+  const { client } = useGiscore()
+  const queryClient = useQueryClient()
 
   return useMutation({
     mutationFn: ({ discussionId, body }: AddCommentVariables) =>
       client.addComment(discussionId, body),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: giscoreKeys.discussions() });
+      queryClient.invalidateQueries({ queryKey: giscoreKeys.discussions() })
     },
     ...options,
-  });
+  })
 }
 
 interface AddReplyVariables {
-  discussionId: string;
-  replyToId: string;
-  body: string;
+  discussionId: string
+  replyToId: string
+  body: string
 }
 
 export function useAddReply(
   options?: Omit<
     UseMutationOptions<CreatedReply, Error, AddReplyVariables>,
-    "mutationFn"
-  >
+    'mutationFn'
+  >,
 ) {
-  const { client } = useGiscore();
-  const queryClient = useQueryClient();
+  const { client } = useGiscore()
+  const queryClient = useQueryClient()
 
   return useMutation({
     mutationFn: ({ discussionId, replyToId, body }: AddReplyVariables) =>
       client.addReply(discussionId, replyToId, body),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: giscoreKeys.discussions() });
+      queryClient.invalidateQueries({ queryKey: giscoreKeys.discussions() })
     },
     ...options,
-  });
+  })
 }
 
 interface ToggleReactionVariables {
-  subjectId: string;
-  content: ReactionContent;
-  hasReacted: boolean;
+  subjectId: string
+  content: ReactionContent
+  hasReacted: boolean
 }
 
 export function useToggleReaction(
   options?: Omit<
     UseMutationOptions<ToggleReactionResult, Error, ToggleReactionVariables>,
-    "mutationFn"
-  >
+    'mutationFn'
+  >,
 ) {
-  const { client } = useGiscore();
-  const queryClient = useQueryClient();
+  const { client } = useGiscore()
+  const queryClient = useQueryClient()
 
   return useMutation({
     mutationFn: ({ subjectId, content, hasReacted }: ToggleReactionVariables) =>
       client.toggleReaction(subjectId, content, hasReacted),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: giscoreKeys.discussions() });
+      queryClient.invalidateQueries({ queryKey: giscoreKeys.discussions() })
     },
     ...options,
-  });
+  })
 }
 
 interface ToggleUpvoteVariables {
-  subjectId: string;
-  hasUpvoted: boolean;
+  subjectId: string
+  hasUpvoted: boolean
 }
 
 export function useToggleUpvote(
   options?: Omit<
     UseMutationOptions<ToggleUpvoteResult, Error, ToggleUpvoteVariables>,
-    "mutationFn"
-  >
+    'mutationFn'
+  >,
 ) {
-  const { client } = useGiscore();
-  const queryClient = useQueryClient();
+  const { client } = useGiscore()
+  const queryClient = useQueryClient()
 
   return useMutation({
     mutationFn: ({ subjectId, hasUpvoted }: ToggleUpvoteVariables) =>
       client.toggleUpvote(subjectId, hasUpvoted),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: giscoreKeys.discussions() });
+      queryClient.invalidateQueries({ queryKey: giscoreKeys.discussions() })
     },
     ...options,
-  });
+  })
 }

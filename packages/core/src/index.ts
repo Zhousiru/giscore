@@ -1,4 +1,4 @@
-export { GiscoreClient } from "./client";
+export { GiscoreClient } from './client'
 export {
   openLoginPopup,
   exchangeSession,
@@ -6,7 +6,7 @@ export {
   createLoginHandler,
   type PopupLoginOptions,
   type LoginResult,
-} from "./auth";
+} from './auth'
 export type {
   GiscoreConfig,
   GiscoreData,
@@ -28,4 +28,4 @@ export type {
   ToggleReactionResult,
   ToggleUpvoteResult,
   RepliesResult,
-} from "./types";
+} from './types'

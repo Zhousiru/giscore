@@ -1,24 +1,24 @@
-import { Hono } from "hono";
-import { env } from "hono/adapter";
-import { HTTPException } from "hono/http-exception";
-import { zValidator } from "@hono/zod-validator";
-import { z } from "zod";
+import type { Env } from '../env'
+import { getAppAccessToken } from '../lib/github-app'
 import {
   GitHubClient,
   parseRepo,
   buildSearchQuery,
   sha1,
-} from "@giscore/services";
-import { getAppAccessToken } from "../lib/github-app";
-import type { Env } from "../env";
+} from '@giscore/services'
+import { zValidator } from '@hono/zod-validator'
+import { Hono } from 'hono'
+import { env } from 'hono/adapter'
+import { HTTPException } from 'hono/http-exception'
+import { z } from 'zod'
 
-const app = new Hono();
+const app = new Hono()
 
 function getToken(c: {
-  req: { header: (name: string) => string | undefined };
+  req: { header: (name: string) => string | undefined }
 }): string | null {
-  const auth = c.req.header("Authorization");
-  return auth?.startsWith("Bearer ") ? auth.slice(7) : null;
+  const auth = c.req.header('Authorization')
+  return auth?.startsWith('Bearer ') ? auth.slice(7) : null
 }
 
 const getQuery = z.object({
@@ -32,14 +32,14 @@ const getQuery = z.object({
   after: z.string().optional(),
   before: z.string().optional(),
   replyFirst: z.string().optional(),
-});
+})
 
 const createJson = z.object({
   repo: z.string(),
   category: z.string(),
   title: z.string(),
   body: z.string(),
-});
+})
 
 const repliesQuery = z.object({
   repo: z.string(),
@@ -48,10 +48,10 @@ const repliesQuery = z.object({
   last: z.string().optional(),
   after: z.string().optional(),
   before: z.string().optional(),
-});
+})
 
 const routes = app
-  .get("/", zValidator("query", getQuery), async (c) => {
+  .get('/', zValidator('query', getQuery), async (c) => {
     const {
       repo,
       term,
@@ -63,23 +63,23 @@ const routes = app
       after,
       before,
       replyFirst,
-    } = c.req.valid("query");
+    } = c.req.valid('query')
 
-    const parsed = parseRepo(repo);
+    const parsed = parseRepo(repo)
     if (!parsed) {
-      throw new HTTPException(400, { message: "Invalid repo format" });
+      throw new HTTPException(400, { message: 'Invalid repo format' })
     }
 
-    let token = getToken(c);
+    let token = getToken(c)
     if (!token) {
-      const { GITHUB_APP_ID, GITHUB_APP_PRIVATE_KEY } = env<Env>(c);
-      token = await getAppAccessToken(repo, {
+      const { GITHUB_APP_ID, GITHUB_APP_PRIVATE_KEY } = env<Env>(c)
+      token = await getAppAccessToken(parsed.owner, parsed.name, {
         appId: GITHUB_APP_ID,
         privateKey: GITHUB_APP_PRIVATE_KEY,
-      });
+      })
     }
 
-    const client = new GitHubClient({ token });
+    const client = new GitHubClient({ token })
 
     if (number) {
       const discussion = await client.getDiscussion({
@@ -91,28 +91,28 @@ const routes = app
         after,
         before,
         replyFirst: replyFirst ? parseInt(replyFirst, 10) : undefined,
-      });
+      })
 
       if (!discussion) {
-        throw new HTTPException(404, { message: "Discussion not found" });
+        throw new HTTPException(404, { message: 'Discussion not found' })
       }
 
-      return c.json({ data: discussion });
+      return c.json({ data: discussion })
     }
 
     if (!term) {
-      throw new HTTPException(400, { message: "Missing term or number" });
+      throw new HTTPException(400, { message: 'Missing term or number' })
     }
 
-    const isStrict = strict === "true";
-    const hash = isStrict ? await sha1(term) : undefined;
+    const isStrict = strict === 'true'
+    const hash = isStrict ? await sha1(term) : undefined
     const query = buildSearchQuery({
       repo,
       term,
       strict: isStrict,
       category,
       hash,
-    });
+    })
 
     const result = await client.searchDiscussions({
       query,
@@ -120,73 +120,72 @@ const routes = app
       last: last ? parseInt(last, 10) : undefined,
       after,
       before,
-    });
+    })
 
-    return c.json({ data: result });
+    return c.json({ data: result })
   })
-  .post("/", zValidator("json", createJson), async (c) => {
-    const { repo, category, title, body } = c.req.valid("json");
+  .post('/', zValidator('json', createJson), async (c) => {
+    const { repo, category, title, body } = c.req.valid('json')
 
-    const parsed = parseRepo(repo);
+    const parsed = parseRepo(repo)
     if (!parsed) {
-      throw new HTTPException(400, { message: "Invalid repo format" });
+      throw new HTTPException(400, { message: 'Invalid repo format' })
     }
 
-    const { GITHUB_APP_ID, GITHUB_APP_PRIVATE_KEY } = env<Env>(c);
-    const token = await getAppAccessToken(repo, {
+    const { GITHUB_APP_ID, GITHUB_APP_PRIVATE_KEY } = env<Env>(c)
+    const token = await getAppAccessToken(parsed.owner, parsed.name, {
       appId: GITHUB_APP_ID,
       privateKey: GITHUB_APP_PRIVATE_KEY,
-    });
+    })
 
-    const client = new GitHubClient({ token });
+    const client = new GitHubClient({ token })
 
     const repository = await client.getRepository({
       owner: parsed.owner,
       repo: parsed.name,
-    });
+    })
 
     if (!repository) {
-      throw new HTTPException(404, { message: "Repository not found" });
+      throw new HTTPException(404, { message: 'Repository not found' })
     }
 
     const categoryInfo = repository.discussionCategories.nodes.find(
-      (cat) => cat.slug === category || cat.name === category
-    );
+      (cat) => cat.slug === category || cat.name === category,
+    )
 
     if (!categoryInfo) {
-      throw new HTTPException(404, { message: "Category not found" });
+      throw new HTTPException(404, { message: 'Category not found' })
     }
 
-    const hashTag = `<!-- sha1: ${await sha1(title)} -->`;
+    const hashTag = `<!-- sha1: ${await sha1(title)} -->`
 
     const discussion = await client.createDiscussion({
       repositoryId: repository.id,
       categoryId: categoryInfo.id,
       title,
       body: `${body}\n\n${hashTag}`,
-    });
+    })
 
-    return c.json({ data: discussion });
+    return c.json({ data: discussion })
   })
-  .get("/replies", zValidator("query", repliesQuery), async (c) => {
-    const { repo, commentId, first, last, after, before } =
-      c.req.valid("query");
+  .get('/replies', zValidator('query', repliesQuery), async (c) => {
+    const { repo, commentId, first, last, after, before } = c.req.valid('query')
 
-    const parsed = parseRepo(repo);
+    const parsed = parseRepo(repo)
     if (!parsed) {
-      throw new HTTPException(400, { message: "Invalid repo format" });
+      throw new HTTPException(400, { message: 'Invalid repo format' })
     }
 
-    let token = getToken(c);
+    let token = getToken(c)
     if (!token) {
-      const { GITHUB_APP_ID, GITHUB_APP_PRIVATE_KEY } = env<Env>(c);
-      token = await getAppAccessToken(repo, {
+      const { GITHUB_APP_ID, GITHUB_APP_PRIVATE_KEY } = env<Env>(c)
+      token = await getAppAccessToken(parsed.owner, parsed.name, {
         appId: GITHUB_APP_ID,
         privateKey: GITHUB_APP_PRIVATE_KEY,
-      });
+      })
     }
 
-    const client = new GitHubClient({ token });
+    const client = new GitHubClient({ token })
 
     const replies = await client.getReplies({
       commentId,
@@ -194,14 +193,14 @@ const routes = app
       last: last ? parseInt(last, 10) : undefined,
       after,
       before,
-    });
+    })
 
     if (!replies) {
-      throw new HTTPException(404, { message: "Comment not found" });
+      throw new HTTPException(404, { message: 'Comment not found' })
     }
 
-    return c.json({ data: replies });
-  });
+    return c.json({ data: replies })
+  })
 
-export const discussionRoutes = routes;
-export type DiscussionRoutes = typeof routes;
+export const discussionRoutes = routes
+export type DiscussionRoutes = typeof routes

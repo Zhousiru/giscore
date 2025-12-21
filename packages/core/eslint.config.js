@@ -1,3 +1,3 @@
-import config from "@giscore/eslint-config/library";
+import config from '@giscore/eslint-config/library'
 
-export default config;
+export default config

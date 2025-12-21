@@ -1,3 +1,3 @@
-import config from "@giscore/eslint-config/react";
+import config from '@giscore/eslint-config/react'
 
-export default config;
+export default config

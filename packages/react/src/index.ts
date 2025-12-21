@@ -1,4 +1,8 @@
-export { GiscoreProvider, useGiscore, type GiscoreProviderProps } from "./context";
+export {
+  GiscoreProvider,
+  useGiscore,
+  type GiscoreProviderProps,
+} from './context'
 export {
   Discussion,
   Comment,
@@ -8,7 +12,7 @@ export {
   useCommentContext,
   useReplyContext,
   useReactionGroupContext,
-} from "./components";
+} from './components'
 export type {
   GiscoreConfig,
   GiscoreData,
@@ -28,4 +32,4 @@ export type {
   CreatedReply,
   ToggleReactionResult,
   ToggleUpvoteResult,
-} from "@giscore/core";
+} from '@giscore/core'
