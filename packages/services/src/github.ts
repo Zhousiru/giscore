@@ -29,6 +29,7 @@ import { graphql, GraphqlResponseError } from '@octokit/graphql'
 
 export interface GitHubClientConfig {
   token: string
+  onAuthError?: () => void | Promise<void>
 }
 
 function isNotFoundError(err: unknown): boolean {
@@ -36,25 +37,50 @@ function isNotFoundError(err: unknown): boolean {
   return err.errors?.some((e) => e.type === 'NOT_FOUND') ?? false
 }
 
+function isAuthError(err: unknown): boolean {
+  if (!(err instanceof GraphqlResponseError)) return false
+  return (
+    err.errors?.some(
+      (e) => e.type === 'FORBIDDEN' || e.message?.includes('401'),
+    ) ?? false
+  )
+}
+
 /**
  * Client for interacting with GitHub Discussions via GraphQL API.
  */
 export class GitHubClient {
-  private graphql: typeof graphql
+  private queryClient: typeof graphql
+  private onAuthError?: () => void | Promise<void>
 
   /**
    * @param config - Configuration with GitHub personal access token
    */
   constructor(config: GitHubClientConfig) {
-    this.graphql = graphql.defaults({
+    this.queryClient = graphql.defaults({
       headers: {
         authorization: `token ${config.token}`,
       },
     })
+    this.onAuthError = config.onAuthError
+  }
+
+  private async query<T>(
+    query: string,
+    variables?: Record<string, unknown>,
+  ): Promise<T> {
+    try {
+      return await this.queryClient<T>(query, variables)
+    } catch (err) {
+      if (isAuthError(err) && this.onAuthError) {
+        await this.onAuthError()
+      }
+      throw err
+    }
   }
 
   async getViewer(): Promise<Viewer> {
-    const data = await this.graphql<{ viewer: Viewer }>(GET_VIEWER)
+    const data = await this.query<{ viewer: Viewer }>(GET_VIEWER)
     return data.viewer
   }
 
@@ -86,7 +112,7 @@ export class GitHubClient {
       const replyFirst =
         params.replyFirst ?? (params.replyLast === undefined ? 10 : undefined)
 
-      const data = await this.graphql<{
+      const data = await this.query<{
         repository: { discussion: Discussion | null } | null
       }>(GET_DISCUSSION, {
         owner: params.owner,
@@ -125,7 +151,7 @@ export class GitHubClient {
     after?: string
     before?: string
   }): Promise<RepliesResult | null> {
-    const data = await this.graphql<{
+    const data = await this.query<{
       node: { replies: RepliesResult } | null
     }>(GET_COMMENT_REPLIES, {
       id: params.commentId,
@@ -154,7 +180,7 @@ export class GitHubClient {
     after?: string
     before?: string
   }): Promise<DiscussionSearchResult> {
-    const data = await this.graphql<{ search: DiscussionSearchResult }>(
+    const data = await this.query<{ search: DiscussionSearchResult }>(
       SEARCH_DISCUSSIONS,
       {
         query: params.query,
@@ -178,7 +204,7 @@ export class GitHubClient {
     owner: string
     repo: string
   }): Promise<Repository | null> {
-    const data = await this.graphql<{ repository: Repository | null }>(
+    const data = await this.query<{ repository: Repository | null }>(
       GET_REPOSITORY,
       params,
     )
@@ -200,7 +226,7 @@ export class GitHubClient {
     title: string
     body: string
   }): Promise<CreatedDiscussion> {
-    const data = await this.graphql<{
+    const data = await this.query<{
       createDiscussion: { discussion: CreatedDiscussion }
     }>(CREATE_DISCUSSION, params)
 
@@ -217,7 +243,7 @@ export class GitHubClient {
     discussionId: string
     body: string
   }): Promise<CreatedComment> {
-    const data = await this.graphql<{
+    const data = await this.query<{
       addDiscussionComment: { comment: CreatedComment }
     }>(ADD_DISCUSSION_COMMENT, {
       discussionId: params.discussionId,
@@ -240,7 +266,7 @@ export class GitHubClient {
     replyToId: string
     body: string
   }): Promise<CreatedReply> {
-    const data = await this.graphql<{
+    const data = await this.query<{
       addDiscussionComment: { comment: CreatedReply }
     }>(ADD_DISCUSSION_REPLY, params)
 
@@ -257,7 +283,7 @@ export class GitHubClient {
     subjectId: string
     content: ReactionContent
   }): Promise<ToggleReactionResult> {
-    const data = await this.graphql<{ addReaction: ToggleReactionResult }>(
+    const data = await this.query<{ addReaction: ToggleReactionResult }>(
       ADD_REACTION,
       params,
     )
@@ -275,7 +301,7 @@ export class GitHubClient {
     subjectId: string
     content: ReactionContent
   }): Promise<ToggleReactionResult> {
-    const data = await this.graphql<{ removeReaction: ToggleReactionResult }>(
+    const data = await this.query<{ removeReaction: ToggleReactionResult }>(
       REMOVE_REACTION,
       params,
     )
@@ -313,7 +339,7 @@ export class GitHubClient {
    * @returns Upvote result with updated count
    */
   async addUpvote(params: { subjectId: string }): Promise<ToggleUpvoteResult> {
-    const data = await this.graphql<{ addUpvote: ToggleUpvoteResult }>(
+    const data = await this.query<{ addUpvote: ToggleUpvoteResult }>(
       ADD_UPVOTE,
       params,
     )
@@ -329,7 +355,7 @@ export class GitHubClient {
   async removeUpvote(params: {
     subjectId: string
   }): Promise<ToggleUpvoteResult> {
-    const data = await this.graphql<{ removeUpvote: ToggleUpvoteResult }>(
+    const data = await this.query<{ removeUpvote: ToggleUpvoteResult }>(
       REMOVE_UPVOTE,
       params,
     )

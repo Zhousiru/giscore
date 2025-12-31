@@ -1,65 +1,68 @@
 import { createStorage, type Storage, type Driver } from 'unstorage'
 import memoryDriver from 'unstorage/drivers/memory'
 
-export interface InstallationAccessTokenCacheItem {
-  installationId: number
-  token: string
-  expiresAt: string
+type CacheType = 'installation-id' | 'access-token'
+
+interface CacheTypeMap {
+  'installation-id': number
+  'access-token': string
 }
 
-let storage: Storage<InstallationAccessTokenCacheItem>
+let storage: Storage<CacheTypeMap[CacheType]>
 
-export function initTokenCache(driver?: Driver): void {
-  storage = createStorage<InstallationAccessTokenCacheItem>({
-    driver: driver ?? memoryDriver(),
-  })
+export function initCache(driver?: Driver): void {
+  storage = createStorage({ driver: driver ?? memoryDriver() })
 }
 
-function getStorage(): Storage<InstallationAccessTokenCacheItem> {
-  if (!storage) {
-    initTokenCache()
-  }
+function getStorage(): Storage<CacheTypeMap[CacheType]> {
+  if (!storage) initCache()
   return storage
 }
 
-function getCachedInstallationAccessTokenKey(installationId: number): string {
-  return `installation-access-token:${installationId}`
+function buildKey(type: CacheType, key: string): string {
+  return `${type}:${key}`
 }
 
-export async function getCachedInstallationAccessToken(
-  installationId: number,
-): Promise<string | null> {
-  const entry = await getStorage().getItem(
-    getCachedInstallationAccessTokenKey(installationId),
-  )
-  if (!entry) return null
-
-  const expiresAt = new Date(entry.expiresAt).getTime()
-  const now = Date.now()
-  const buffer = 5 * 60 * 1000 // 5 minutes buffer
-
-  if (now >= expiresAt - buffer) {
-    await getStorage().removeItem(
-      getCachedInstallationAccessTokenKey(installationId),
-    )
-    return null
-  }
-
-  return entry.token
+export async function getCache<T extends CacheType>(
+  type: T,
+  key: string,
+): Promise<CacheTypeMap[T] | null> {
+  return (await getStorage().getItem(buildKey(type, key))) as
+    | CacheTypeMap[T]
+    | null
 }
 
-export async function setCachedInstallationAccessToken(
-  entry: InstallationAccessTokenCacheItem,
+export async function setCache<T extends CacheType>(
+  type: T,
+  key: string,
+  value: CacheTypeMap[T],
+  ttl?: number,
 ): Promise<void> {
-  const expiresAt = new Date(entry.expiresAt).getTime()
-  const now = Date.now()
-  const ttl = Math.floor((expiresAt - now) / 1000)
+  await getStorage().setItem(buildKey(type, key), value, {
+    ttl,
+  })
+}
 
-  if (ttl <= 0) return
+export async function removeCache(type: CacheType, key: string): Promise<void> {
+  await getStorage().removeItem(buildKey(type, key))
+}
 
-  await getStorage().setItem(
-    getCachedInstallationAccessTokenKey(entry.installationId),
-    entry,
-    { ttl },
+export async function setInstallationIdCache(options: {
+  key: string
+  id: number
+}): Promise<void> {
+  await setCache('installation-id', options.key, options.id)
+}
+
+export async function setAccessTokenCache(options: {
+  key: string
+  token: string
+  expiresAt: string
+}): Promise<void> {
+  const buffer = 5 * 60 * 1000
+  const ttl = Math.floor(
+    (new Date(options.expiresAt).getTime() - Date.now() - buffer) / 1000,
   )
+  if (ttl <= 0) return
+  await setCache('access-token', options.key, options.token, ttl)
 }

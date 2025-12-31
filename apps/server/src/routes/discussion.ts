@@ -1,11 +1,6 @@
 import type { Env } from '../env'
-import { getAppAccessToken } from '../lib/github-app'
-import {
-  GitHubClient,
-  parseRepo,
-  buildSearchQuery,
-  sha1,
-} from '@giscore/services'
+import { getAppAccessToken, invalidateTokenCache } from '../lib/github-app'
+import { GitHubClient, parseRepo, buildSearchQuery, sha1 } from '@giscore/services'
 import { zValidator } from '@hono/zod-validator'
 import { Hono } from 'hono'
 import { env } from 'hono/adapter'
@@ -19,6 +14,18 @@ function getToken(c: {
 }): string | null {
   const auth = c.req.header('Authorization')
   return auth?.startsWith('Bearer ') ? auth.slice(7) : null
+}
+
+function createClient(
+  token: string,
+  repo?: { owner: string; name: string },
+): GitHubClient {
+  return new GitHubClient({
+    token,
+    onAuthError: repo
+      ? () => invalidateTokenCache(repo.owner, repo.name)
+      : undefined,
+  })
 }
 
 const getQuery = z.object({
@@ -71,15 +78,17 @@ const routes = app
     }
 
     let token = getToken(c)
-    if (!token) {
+    let client: GitHubClient
+    if (token) {
+      client = createClient(token)
+    } else {
       const { GITHUB_APP_ID, GITHUB_APP_PRIVATE_KEY } = env<Env>(c)
       token = await getAppAccessToken(parsed.owner, parsed.name, {
         appId: GITHUB_APP_ID,
         privateKey: GITHUB_APP_PRIVATE_KEY,
       })
+      client = createClient(token, parsed)
     }
-
-    const client = new GitHubClient({ token })
 
     if (number) {
       const discussion = await client.getDiscussion({
@@ -138,7 +147,7 @@ const routes = app
       privateKey: GITHUB_APP_PRIVATE_KEY,
     })
 
-    const client = new GitHubClient({ token })
+    const client = createClient(token, parsed)
 
     const repository = await client.getRepository({
       owner: parsed.owner,
@@ -177,15 +186,17 @@ const routes = app
     }
 
     let token = getToken(c)
-    if (!token) {
+    let client: GitHubClient
+    if (token) {
+      client = createClient(token)
+    } else {
       const { GITHUB_APP_ID, GITHUB_APP_PRIVATE_KEY } = env<Env>(c)
       token = await getAppAccessToken(parsed.owner, parsed.name, {
         appId: GITHUB_APP_ID,
         privateKey: GITHUB_APP_PRIVATE_KEY,
       })
+      client = createClient(token, parsed)
     }
-
-    const client = new GitHubClient({ token })
 
     const replies = await client.getReplies({
       commentId,
